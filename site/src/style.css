@@ -135,8 +135,7 @@ select, input { width: 100%; min-height: 48px; padding: 10px 12px; border: 1px s
 .price-note { max-width: 760px; }
 .price-note > p:last-child { max-width: 660px; font-size: 18px; }
 .price-block { padding-left: 40px; border-left: 1px solid var(--ink); }
-.price { margin: 0; color: var(--moss); font: 500 clamp(64px, 7vw, 92px)/1 var(--serif); letter-spacing: -.05em; }
-.price span { margin-right: 4px; font-size: .45em; vertical-align: top; }
+.price-hold { margin: 0; color: var(--clay); font: 600 clamp(34px, 4vw, 52px)/1.05 var(--serif); letter-spacing: -.025em; }
 .price-block > p:nth-child(2) { margin: 8px 0 28px; color: var(--muted); }
 details { margin-top: 28px; border-top: 1px solid var(--rule); }
 summary { min-height: 48px; padding: 12px 0; cursor: pointer; font-weight: 800; }

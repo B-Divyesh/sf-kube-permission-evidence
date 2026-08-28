@@ -80,6 +80,64 @@ test('license return is stored, stripped, and verified', async ({ page }) => {
   await expect(page).toHaveURL('/');
   await expect(page.getByText('Field kit license verified on this device.')).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('sb_license:kube-permission-evidence'))).toBe('test-token');
+  expect(JSON.parse(await page.evaluate(() => localStorage.getItem('sb_license_verdict:kube-permission-evidence') ?? '{}'))).toMatchObject({
+    token: 'test-token', valid: true, reason: 'ok',
+  });
+});
+
+test('a cached verdict is never reused for a replacement license token', async ({ page }) => {
+  const verified: string[] = [];
+  await page.route('https://api.sociobot.in/api/v1/products/kube-permission-evidence/verify?license=*', async (route) => {
+    const token = new URL(route.request().url()).searchParams.get('license') ?? '';
+    verified.push(token);
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ valid: token === 'valid-one', reason: token === 'valid-one' ? 'ok' : 'invalid', expires_at: null }),
+    });
+  });
+
+  await page.goto('/?license=valid-one');
+  await expect(page.getByText('Field kit license verified on this device.')).toBeVisible();
+  await expect(page.locator('#unlocked-tools')).toBeVisible();
+
+  await page.goto('/?license=invalid-two');
+  await expect(page).toHaveURL('/');
+  await expect(page.getByText(/License no longer active/)).toBeVisible();
+  await expect(page.locator('#unlocked-tools')).toBeHidden();
+  expect(verified).toEqual(['valid-one', 'invalid-two']);
+  expect(JSON.parse(await page.evaluate(() => localStorage.getItem('sb_license_verdict:kube-permission-evidence') ?? '{}'))).toMatchObject({
+    token: 'invalid-two', valid: false, reason: 'invalid',
+  });
+});
+
+test('license return URLs never enter Cache Storage', async ({ page }) => {
+  await page.route('https://api.sociobot.in/api/v1/products/kube-permission-evidence/verify?license=qa-cache-secret', (route) => {
+    void route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: false, reason: 'invalid', expires_at: null }) });
+  });
+  await page.goto('/');
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
+
+  await page.goto('/?license=qa-cache-secret');
+  await expect(page).toHaveURL('/');
+  await expect(page.getByText(/License no longer active/)).toBeVisible();
+  const cachedUrls = await page.evaluate(async () => {
+    const urls: string[] = [];
+    for (const cacheName of await caches.keys()) {
+      urls.push(...(await (await caches.open(cacheName)).keys()).map((request) => request.url));
+    }
+    return urls;
+  });
+  expect(cachedUrls.filter((url) => new URL(url).searchParams.has('license'))).toEqual([]);
+});
+
+test('an unavailable paid release is not advertised as purchasable', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByText('Sales are paused')).toBeVisible();
+  await expect(page.getByRole('link', { name: /buy the field kit/i })).toHaveCount(0);
+  await expect(page.locator('a[href*="/checkout"]')).toHaveCount(0);
+  await expect(page.getByText(/downloads and templates will appear here/i)).toHaveCount(0);
 });
 
 test('versioned service worker claims immediately and supports an offline reload', async ({ page, context }) => {
@@ -107,7 +165,8 @@ test('deployment artifact contains native security, cache, and worker update pol
   expect(policy.routes.find(({ route }) => route === '/sw.js')?.headers['Cache-Control']).toContain('no-store');
 
   const worker = readFileSync('dist/site/sw.js', 'utf8');
-  expect(worker).toContain("kpe-field-guide-v2");
+  expect(worker).toContain("kpe-field-guide-v3");
+  expect(worker).toContain("url.searchParams.has('license')");
   expect(worker).toContain('self.skipWaiting()');
   expect(worker).toContain('self.clients.claim()');
 });

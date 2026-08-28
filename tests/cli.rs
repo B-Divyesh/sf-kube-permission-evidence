@@ -125,3 +125,55 @@ fn release_binary_denies_named_top_level_create() {
     assert_eq!(report.pointer("/checks/0/grants/0"), None);
     assert_eq!(report.pointer("/summary/denied"), Some(&1.into()));
 }
+
+#[test]
+fn release_binary_allows_kubernetes_wildcard_subresource_rule() {
+    let temp = tempfile::tempdir().unwrap();
+    let snapshot = temp.path().join("snapshot.json");
+    let matrix = temp.path().join("matrix.json");
+    fs::write(
+        &snapshot,
+        r#"{
+          "schemaVersion":"kpe.snapshot/v1","collectedAt":"2026-08-28T00:00:00Z",
+          "collectorVersion":"test","context":"regression","serverVersion":"v1.33.4",
+          "roles":[],"roleBindings":[],
+          "clusterRoles":[{"kind":"ClusterRole","metadata":{"name":"scale-any-resource"},
+            "rules":[{"apiGroups":["apps"],"resources":["*/scale"],"verbs":["update"]}]}],
+          "clusterRoleBindings":[{"kind":"ClusterRoleBinding","metadata":{"name":"alice-scale"},
+            "subjects":[{"kind":"User","name":"alice"}],
+            "roleRef":{"kind":"ClusterRole","name":"scale-any-resource","apiGroup":"rbac.authorization.k8s.io"}}]
+        }"#,
+    )
+    .unwrap();
+    fs::write(
+        &matrix,
+        r#"{"checks":[
+          {"verb":"update","apiGroup":"apps","resource":"deployments","subresource":"scale","namespace":"payments"},
+          {"verb":"update","apiGroup":"apps","resource":"deployments","subresource":"status","namespace":"payments"}
+        ]}"#,
+    )
+    .unwrap();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_kpe"))
+        .args(["report", "--snapshot"])
+        .arg(snapshot)
+        .args(["--subject", "user:alice", "--matrix"])
+        .arg(matrix)
+        .arg("--json")
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report.pointer("/checks/0/allowed"), Some(&true.into()));
+    assert_eq!(
+        report.pointer("/checks/0/grants/0/rule/resources/0"),
+        Some(&"*/scale".into())
+    );
+    assert_eq!(report.pointer("/checks/1/allowed"), Some(&false.into()));
+    assert_eq!(report.pointer("/summary/allowed"), Some(&1.into()));
+    assert_eq!(report.pointer("/summary/denied"), Some(&1.into()));
+}

@@ -126,7 +126,8 @@ the snapshot.
 - RoleBinding→Role and RoleBinding→ClusterRole grants, constrained to the
   binding namespace.
 - ClusterRoleBinding→ClusterRole grants across namespaces.
-- Exact and wildcard verbs, API groups, resources, and non-resource URLs.
+- Exact and wildcard verbs, API groups, resources, and non-resource URLs,
+  including Kubernetes' `*/subresource` form such as `*/scale`.
 - Subresources (`pods/exec`) and verb-correct `resourceNames` constraints,
   including explicit `metadata.name` selectors for named `list`/`watch`.
 - Direct User, Group, and ServiceAccount subjects, including Kubernetes'
@@ -169,7 +170,9 @@ cargo package --allow-dirty
 
 The static documentation uses Vite and vanilla TypeScript. It has no runtime
 CDNs, tracking, or uploaded cluster data. The license form stores only the
-license token and a daily verification verdict in local browser storage.
+license token and a token-bound daily verification verdict in local browser
+storage. Field Kit sales remain paused until the hosted checkout and every
+promised release asset are available; the free CLI is complete and unaffected.
 
 ## Deployment
 

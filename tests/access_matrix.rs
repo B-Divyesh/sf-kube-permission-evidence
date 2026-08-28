@@ -359,3 +359,60 @@ fn field_selector_state_is_bounded_to_named_list_and_watch_checks() {
         "fieldSelector is supported only for list or watch checks"
     );
 }
+
+#[test]
+fn wildcard_subresource_rules_follow_kubernetes_resource_matching() {
+    let snapshot = Snapshot {
+        schema_version: "kpe.snapshot/v1".into(),
+        collected_at: "2026-08-28T00:00:00Z".into(),
+        collector_version: "test".into(),
+        context: "wildcard-subresource-regression".into(),
+        server_version: "v1.33.4".into(),
+        roles: vec![],
+        cluster_roles: vec![Role {
+            kind: "ClusterRole".into(),
+            metadata: metadata("scale-any-resource", None),
+            rules: vec![rule(&["apps"], &["*/scale"], &["update"])],
+            aggregation_rule: None,
+        }],
+        role_bindings: vec![],
+        cluster_role_bindings: vec![binding(
+            "ClusterRoleBinding",
+            "alice-scale",
+            None,
+            vec![subject("User", "alice", None)],
+            "ClusterRole",
+            "scale-any-resource",
+        )],
+    };
+    let with_subresource = |resource: &str, subresource: &str| {
+        let mut request = check("update", "apps", resource, Some("payments"));
+        request.subresource = Some(subresource.into());
+        request
+    };
+    let report = evaluate(
+        &snapshot,
+        &parse_subject("user:alice").unwrap(),
+        &[],
+        &AccessMatrix {
+            checks: vec![
+                with_subresource("deployments", "scale"),
+                with_subresource("statefulsets", "scale"),
+                with_subresource("deployments", "status"),
+                check("update", "apps", "deployments", Some("payments")),
+            ],
+        },
+    );
+
+    assert_eq!(
+        report
+            .checks
+            .iter()
+            .map(|result| result.allowed)
+            .collect::<Vec<_>>(),
+        vec![true, true, false, false]
+    );
+    assert_eq!(report.summary.allowed, 2);
+    assert_eq!(report.summary.denied, 2);
+    assert_eq!(report.checks[0].grants[0].rule.resources, vec!["*/scale"]);
+}

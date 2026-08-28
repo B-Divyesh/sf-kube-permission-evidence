@@ -251,12 +251,10 @@ fn rule_matches(rule: &PolicyRule, request: &AccessCheck) -> bool {
     if !contains_or_star(&rule.api_groups, &request.api_group) {
         return false;
     }
-    let resource = match (&request.resource, &request.subresource) {
-        (Some(resource), Some(subresource)) => format!("{resource}/{subresource}"),
-        (Some(resource), None) => resource.clone(),
-        _ => return false,
+    let Some(resource) = request.resource.as_deref() else {
+        return false;
     };
-    if !contains_or_star(&rule.resources, &resource) {
+    if !resource_matches(&rule.resources, resource, request.subresource.as_deref()) {
         return false;
     }
     if rule.resource_names.is_empty() {
@@ -292,6 +290,21 @@ fn field_selector_matches_name(selector: &str, resource_name: &str) -> bool {
 
 fn contains_or_star(values: &[String], expected: &str) -> bool {
     values.iter().any(|value| value == "*" || value == expected)
+}
+
+/// Mirrors Kubernetes RBAC's ResourceMatches behavior, including the special
+/// `*/subresource` form (for example, `*/scale`). A wildcard subresource must
+/// not match the parent resource or a different subresource.
+fn resource_matches(values: &[String], resource: &str, subresource: Option<&str>) -> bool {
+    let requested = subresource
+        .map(|subresource| format!("{resource}/{subresource}"))
+        .unwrap_or_else(|| resource.to_owned());
+
+    values.iter().any(|value| {
+        value == "*"
+            || value == &requested
+            || subresource.is_some_and(|subresource| value == &format!("*/{subresource}"))
+    })
 }
 
 fn url_matches(pattern: &str, url: &str) -> bool {
@@ -344,6 +357,34 @@ mod tests {
         };
         assert!(rule_matches(&rule, &check));
         check.resource_name = None;
+        assert!(!rule_matches(&rule, &check));
+    }
+
+    #[test]
+    fn wildcard_subresource_matches_only_that_subresource() {
+        let rule = PolicyRule {
+            api_groups: vec!["apps".into()],
+            resources: vec!["*/scale".into()],
+            verbs: vec!["update".into()],
+            ..Default::default()
+        };
+        let mut check = AccessCheck {
+            verb: "update".into(),
+            api_group: "apps".into(),
+            resource: Some("deployments".into()),
+            subresource: Some("scale".into()),
+            namespace: Some("payments".into()),
+            resource_name: None,
+            field_selector: None,
+            non_resource_url: None,
+        };
+
+        assert!(rule_matches(&rule, &check));
+        check.resource = Some("statefulsets".into());
+        assert!(rule_matches(&rule, &check));
+        check.subresource = Some("status".into());
+        assert!(!rule_matches(&rule, &check));
+        check.subresource = None;
         assert!(!rule_matches(&rule, &check));
     }
 

@@ -1,75 +1,113 @@
-# Independent verification handoff — FAIL
+# Repair handoff — ready for verification
 
-## Status
+## Scope and disposition
 
-Candidate `9214065b8d33fdfc40de4aa9b21bccb4bd19c874` was independently verified on
-2026-08-28 against <https://kube-permission-evidence.sociobot.in/>.
+Repair work order `kube-permission-evidence-repair-2` addressed every finding
+in `.factory/verification-2.md` for candidate
+`9214065b8d33fdfc40de4aa9b21bccb4bd19c874`.
 
-**FAIL.** The clean build, automated checks, package installation, static
-deployment, accessibility, privacy-on-first-load, response policies, offline
-behavior, and performance gates pass. Release is blocked by a core evaluator
-false denial and an unavailable paid checkout. Two additional license/privacy
-defects also require repair. Full evidence is in
-[`.factory/verification-2.md`](verification-2.md).
+1. **Wildcard subresources:** the evaluator now mirrors Kubernetes RBAC's
+   special `*/subresource` match. `*/scale` grants `deployments/scale` and
+   `statefulsets/scale`, but not the parent resource or `*/status`.
+2. **Unavailable paid offer:** the live-sale claim, `$49` price, dead checkout
+   link, and unpublished-download promise were removed. The site states that
+   sales are paused until the factory-owned Sociobot product and all promised
+   assets are available. Existing-token restore remains supported. No billing
+   or infrastructure was modified, in accordance with `AGENTS.md`.
+3. **Verdict/token misbinding:** cached verdicts now include the exact token
+   verified. Legacy unbound verdicts and verdicts for another token are
+   ignored; a replacement return token is always verified for itself.
+4. **License URL persistence:** service-worker cache v3 never stores a request
+   containing the `license` query parameter. Activation deletes v2 and all
+   other old caches, removing legacy query-bearing entries.
 
-## Release blockers
+The researched brief, Rust CLI artifact, static deployment class, visual
+system, complete free feature set, and previously passing behaviors are
+unchanged.
 
-1. **High — incorrect RBAC result:** a bound Kubernetes rule with
-   `resources: ["*/scale"]` grants `update deployments/scale`, but the release
-   binary reports denied with zero grants. Kubernetes v1.33.4 explicitly
-   supports the `*/subresource` form; `src/evaluator.rs` does not.
-2. **High — purchase unavailable:** the live `$49` checkout endpoint returns
-   HTTP 404 with `{"error":"enabled factory product","status":404}`, and the
-   promised paid artifacts are not yet available.
-3. **Medium — license verdict misbinding:** a fresh cached valid verdict is
-   reused after a different `?license=` token replaces the saved token, so the
-   new token is not verified and the paid panel remains unlocked.
-4. **Medium — license token cached by PWA:** a service-worker-controlled return
-   visit leaves the full `/?license=<token>` URL in Cache Storage after the
-   visible URL is stripped.
+## Exact regression coverage
 
-## Passing evidence
+- `src/evaluator.rs`: unit coverage for `*/scale` across two parent resources,
+  plus negative wrong-subresource and parent-resource cases.
+- `tests/access_matrix.rs`: bound-role integration coverage verifies decisions,
+  summary counts, and causal grant preservation.
+- `tests/cli.rs`: compiled `kpe report --json` reproduction of the verifier's
+  rule and request; asserts 1 allowed / 1 denied and the emitted `*/scale`
+  grant.
+- `tests/site/landing.spec.ts`: browser coverage for token-bound verdict
+  persistence; the exact `valid-one` → `invalid-two` replacement sequence;
+  no query-bearing Cache Storage entry under a controlling worker; no live
+  checkout claim; cache v3 update policy.
 
-- Fresh detached checkout at the exact candidate remained clean.
-- `npm ci` and `npm audit --audit-level=high`: pass, 0 vulnerabilities.
-- `npm test`: pass — TypeScript, rustfmt, Clippy with warnings denied, 11 Rust
-  tests, and 11 Chromium tests.
-- `npm run build`: pass; produced the release binary and `dist/site/`.
-- `cargo test --doc`: 1 passed.
-- `cargo package --locked --allow-dirty`: pass; staged package verified.
-- Clean package install and documented CLI flow: pass; signed packet verified,
-  key mode `0600`, summary 2 allowed / 2 denied.
-- Invalid input/recovery and policy exit-code checks behaved as documented.
-- Live HTML, JS, CSS, service worker, and hero hashes match the candidate.
-- Live desktop/390 px mobile, keyboard, 200% text, visible focus, reduced
-  motion, axe, console/page errors, privacy-first-load, headers, caching,
-  service-worker update, and offline reload checks pass.
-- Lighthouse mobile: Performance 98, Accessibility 100, Best Practices 100,
-  SEO 100; FCP 1.0 s, LCP 1.4 s, TBT 160 ms, CLS 0; 103 KiB transferred.
+## Local verification — 2026-08-28 UTC
 
-## Build identity
+Commands and results:
 
 ```text
-candidate  9214065b8d33fdfc40de4aa9b21bccb4bd19c874
-kpe        766edb2b5c3c1de30ce5b56b018eb5122f66a74be1f465d14ce42a854b0b5cdb
-HTML       69da1449f15598a9b868f42b555df81e3b3e775e106ea41296de1362900b9f2a
-JS         58301963bfe32d2c3ab4ca45631973ab3940d56a1e8350519b32583a619dd6b3
-CSS        f8e2b395344c4780a8c82e63a98c9583194a5632648ed976d2ebddf284392c1c
-SW         aaa27cec767428f80afc26352647c13768fded91b2c3756d1bf0222d059fc796
-hero       b71aca102454a1d83c31d17969dceb8013f047edae8bc5e6a90990b23f0c12eb
+npm ci                                      PASS — 24 packages, 0 vulnerabilities
+npm audit --audit-level=high                PASS — 0 vulnerabilities
+npm test                                    PASS
+  npm run typecheck                         PASS
+  cargo fmt --all -- --check                PASS
+  cargo clippy --all-targets -- -D warnings PASS
+  Rust unit/integration tests               PASS — 14
+  Chromium site tests                       PASS — 14
+npm run build                               PASS — target/release/kpe + dist/site
+cargo test --doc                            PASS — 1
+cargo package --locked --allow-dirty        PASS — 25 files; staged crate compiled
+cargo install --locked --path <staged>      PASS — clean consumer root
 ```
 
-## Re-run
+The clean installed package reported `kpe 0.1.0`, exposed the documented
+non-interactive commands, and evaluated the packaged example as 2 allowed / 2
+denied. The factory URL verifier passed locally in 535 ms with no console or
+page errors, a title, `lang=en`, one h1, a main landmark, complete image alt
+text, and labeled buttons.
 
-```sh
-npm ci
-npm audit --audit-level=high
-npm test
-npm run build
-cargo test --doc
-cargo package --locked --allow-dirty
-```
+Browser coverage includes desktop, 390×844 mobile, keyboard-only demo use,
+44 px touch targets, serious/critical axe checks for all routes, offline
+reload, immediate service-worker claiming, license return stripping, token
+replacement, privacy-first-load behavior, and production response-policy
+artifact assertions.
 
-No Kubernetes API was available in the worker, so live-cluster collection was
-not repeated. No product source, infrastructure, DNS, billing configuration,
-or release registry was modified during verification.
+Lighthouse 13.0.1 simulated mobile against the production build:
+
+| Category / metric | Result |
+| --- | ---: |
+| Performance | 100 |
+| Accessibility | 100 |
+| Best Practices | 100 |
+| SEO | 100 |
+| FCP | 0.9 s |
+| LCP | 1.5 s |
+| TBT | 0 ms |
+| CLS | 0 |
+| Total transfer | 103 KiB |
+
+Production artifacts before deployment:
+
+| Artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `target/release/kpe` | 1,591,264 | `a3ea03572828b46e4044797f4ad5a9e56db53c00d59f5b01e3888f2c0fad40f8` |
+| `dist/site/index.html` | 10,678 | `24b615a12c1569623473540c247c1996d087feaadf849867b5bfe248d548f8f7` |
+| main JS | 5,986 | `b99f639c4827b293e740d1357e12abccf58b14aad88d6fb2631f34d5be916e6a` |
+| CSS | 14,183 | `8619e6173c6e700645b985320f2663551eef76a524e313ea5dfc94ce1de9dbfc` |
+| service worker | 1,303 | `f7afc179252beee98b4dae126729b24fa45413d24bf677dce816d2dda6b84c94` |
+| hero WebP | 93,322 | `b71aca102454a1d83c31d17969dceb8013f047edae8bc5e6a90990b23f0c12eb` |
+
+JS, CSS, fonts (none), and hero image remain comfortably inside the supplied
+budgets. No analytics, telemetry, CDN script, third-party font, cluster data,
+or kubeconfig token is sent by the site.
+
+## Deployment and live identity
+
+Deployment and post-deploy identity evidence are recorded below after the
+repair commit is uploaded to the configured static host.
+
+## Known external follow-up
+
+Field Kit sales intentionally remain paused. Factory operators may register
+and enable the Sociobot product and publish the complete promised asset set in
+a later release; only then should the checkout link and price be restored.
+Registry publishing is also factory-owned, so this worker prepared and
+consumer-tested the crate but did not publish it.

@@ -90,7 +90,7 @@ const unlocked = document.querySelector<HTMLElement>('#unlocked-tools');
 const form = document.querySelector<HTMLFormElement>('#license-form');
 const tokenInput = document.querySelector<HTMLInputElement>('#license-token');
 
-type CachedVerdict = { valid: boolean; checkedAt: number; reason: string };
+type CachedVerdict = { token: string; valid: boolean; checkedAt: number; reason: string };
 
 function readVerdict(): CachedVerdict | null {
   try { return JSON.parse(localStorage.getItem(VERDICT_KEY) ?? 'null') as CachedVerdict | null; }
@@ -106,10 +106,13 @@ function showLicense(valid: boolean, message: string): void {
 }
 
 async function verifyLicense(token: string, force = false): Promise<void> {
-  const cached = readVerdict();
+  const storedVerdict = readVerdict();
+  // A verdict is valid only for the exact token sent to the verification API.
+  // Legacy verdicts without `token` and verdicts for a replaced token are ignored.
+  const cached = storedVerdict?.token === token ? storedVerdict : null;
   if (cached?.valid) showLicense(true, 'Field kit unlocked from your saved license.');
   if (!force && cached && Date.now() - cached.checkedAt < DAY) {
-    if (!cached.valid) showLicense(false, 'License no longer active. You can restore another token or buy the field kit.');
+    if (!cached.valid) showLicense(false, 'License no longer active. You can restore another token; new sales are paused.');
     return;
   }
   if (!navigator.onLine) {
@@ -121,8 +124,8 @@ async function verifyLicense(token: string, force = false): Promise<void> {
     const response = await fetch(`${API}/products/${SLUG}/verify?license=${encodeURIComponent(token)}`, { headers: { accept: 'application/json' } });
     if (!response.ok) throw new Error(`verification returned ${response.status}`);
     const verdict = await response.json() as { valid: boolean; reason: string };
-    localStorage.setItem(VERDICT_KEY, JSON.stringify({ valid: verdict.valid, reason: verdict.reason, checkedAt: Date.now() }));
-    showLicense(verdict.valid, verdict.valid ? 'Field kit license verified on this device.' : 'License no longer active. You can restore another token or buy the field kit.');
+    localStorage.setItem(VERDICT_KEY, JSON.stringify({ token, valid: verdict.valid, reason: verdict.reason, checkedAt: Date.now() }));
+    showLicense(verdict.valid, verdict.valid ? 'Field kit license verified on this device.' : 'License no longer active. You can restore another token; new sales are paused.');
   } catch {
     showLicense(Boolean(cached?.valid), cached?.valid ? 'Using your saved license while verification is unavailable.' : 'Could not reach license verification. The free CLI remains available; try again when online.');
   }

@@ -7,6 +7,12 @@ this project uses [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Matched Kubernetes RBAC rules of the form `*/subresource` without allowing
+  parent resources or other subresources.
+- Bound cached license verdicts to the exact verified token and prevented
+  license-bearing return URLs from entering service-worker Cache Storage.
+- Paused the not-yet-enabled Field Kit offer instead of linking to an
+  unavailable checkout or promising unpublished downloads.
 - Prevented `resourceNames` rules from falsely granting top-level `create` or
   `deletecollection`, and required a matching `metadata.name` field selector
   for named `list` and `watch` evidence.
