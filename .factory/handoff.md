@@ -105,9 +105,41 @@ not performed; the factory owns those credentials.
   been registered. The repository correctly uses only the required Sociobot
   URL and API contract. Product registration and paid fulfillment are factory
   infrastructure work and are not performed from this repository.
-- Post-deployment URL identity, response headers, and artifact hashes are
-  recorded below after the work-order deployment.
-
 ## Post-deployment evidence
 
-Pending deployment of this repair commit.
+Repair commit `986ed25` was pushed to `origin/main` and deployed with the work
+order's exact static configuration:
+
+```sh
+npm ci && npm run build:site
+/opt/fleet/lib/deploy-static.sh kube-permission-evidence dist/site
+```
+
+Azure Static Web Apps deployment
+`4315ec6a-a5a1-40bb-b6c3-7065191a04ad` succeeded, the custom domain was
+`Ready`, and <https://kube-permission-evidence.sociobot.in/> returned HTTP 200.
+
+- Live root responses now include the committed CSP and Permissions-Policy.
+  HSTS, strict referrer policy, and `nosniff` remain present.
+- Live hashed JavaScript and `specimen-map.webp` return
+  `Cache-Control: public, max-age=31536000, immutable`; `sw.js` returns
+  `Cache-Control: no-cache, no-store, must-revalidate`.
+- Live/local SHA-256 pairs matched exactly: HTML
+  `69da1449f15598a9b868f42b555df81e3b3e775e106ea41296de1362900b9f2a`,
+  JavaScript
+  `58301963bfe32d2c3ab4ca45631973ab3940d56a1e8350519b32583a619dd6b3`,
+  service worker
+  `aaa27cec767428f80afc26352647c13768fded91b2c3756d1bf0222d059fc796`,
+  and hero image
+  `b71aca102454a1d83c31d17969dceb8013f047edae8bc5e6a90990b23f0c12eb`.
+- Live factory `verify-url.sh`: 830 ms network-idle load, correct title/lang,
+  one h1, main landmark, no missing alt text, no unlabeled buttons, and zero
+  console/page errors.
+- Live Chromium desktop and 390 px mobile: no serious/critical axe violations
+  on the landing, privacy, or terms routes; no undersized targets or horizontal
+  overflow; skip-link keyboard focus passed; only the product origin was
+  requested; ordinary first load wrote no local storage; reduced motion was
+  `0.01ms`; service-worker control and an offline reload/demo interaction
+  passed.
+- Live Lighthouse 13.4.1 simulated mobile: Performance 100, Accessibility 100,
+  Best Practices 100, SEO 100; FCP 0.9 s, LCP 1.4 s, TBT 0 ms, CLS 0.
