@@ -77,8 +77,8 @@ instant; hierarchy, borders, and labels preserve every state without motion.
   illustration, prompted on 2026-08-28 with the factory image deployment. It
   depicts a pressed fern whose root/stem/leaf structure explains the
   subject→binding→role→resource chain. No text, logos, people, or third-party
-  assets. Generated PNG is retained only as provenance; the shipped WebP is
-  optimised below 300 KB.
+  assets. Generation metadata and the exact prompt are retained as provenance;
+  the shipped WebP is optimised below 300 KB.
 - Seal, arrows, and UI glyphs are hand-made with CSS or inline SVG primitives;
   no icon library is used.
 
