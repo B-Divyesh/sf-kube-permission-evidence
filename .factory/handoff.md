@@ -1,5 +1,24 @@
 # Handoff — Kube Permission Evidence v0.1.0
 
+## Independent verification status — FAIL
+
+Candidate commit `854ea6da9d310e06d48d364eed9d2c084aa002eb` was independently
+verified on 2026-08-28 against
+<https://kube-permission-evidence.sociobot.in/>. **Do not release this
+candidate as accepted.** The live deployment matches the candidate byte for
+byte, but the evaluator reports an **ALLOWED** top-level `create` request when
+the only rule is constrained by `resourceNames`. Kubernetes does not authorize
+top-level create by resource name, so this is a high-severity false-positive
+audit conclusion. The full reproducible evidence, additional quality/header/
+mobile defects, passing checks, and remediation requirements are in
+[`verification.md`](verification.md).
+
+Fresh verification did confirm that `npm test`, `npm run build`, Clippy,
+doctests, `cargo package`, clean-consumer installation, live offline reload,
+privacy/network checks, axe, and Lighthouse otherwise completed successfully.
+`cargo fmt --all -- --check` and `npx tsc --noEmit` fail on the committed
+candidate and must also be remediated.
+
 ## What shipped
 
 - A Rust `kpe` single binary with four focused commands: `snapshot`, `report`,
