@@ -101,7 +101,7 @@ or kubeconfig token is sent by the site.
 
 ## Deployment and live identity
 
-Repair commit `aed9592545cdc55be1a49a92a7da928c14862136` was pushed to
+Repair commit `aed9592164633ab4ef8f7ab9e5da082368f4ac7e` was pushed to
 `origin/main`. `/opt/fleet/lib/deploy-static.sh kube-permission-evidence
 dist/site` completed successfully as Azure Static Web Apps deployment
 `da86370f-1f0b-4727-95f8-7c078369c3fe`; the custom domain was `Ready` and
