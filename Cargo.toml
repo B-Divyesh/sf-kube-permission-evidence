@@ -1,0 +1,40 @@
+[package]
+name = "kube-permission-evidence"
+version = "0.1.0"
+edition = "2024"
+description = "Auditor-readable, point-in-time proofs of effective Kubernetes RBAC access"
+license = "MIT"
+repository = "https://github.com/B-Divyesh/sf-kube-permission-evidence"
+readme = "README.md"
+keywords = ["kubernetes", "rbac", "audit", "security", "cli"]
+categories = ["command-line-utilities"]
+exclude = ["site/", "dist/", ".factory/", "tests/fixtures/"]
+
+[lib]
+name = "kube_permission_evidence"
+path = "src/lib.rs"
+
+[[bin]]
+name = "kpe"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0"
+base64 = "0.22"
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde"] }
+clap = { version = "4.5", features = ["derive", "wrap_help"] }
+ed25519-dalek = { version = "2.2", features = ["rand_core"] }
+hex = "0.4"
+rand_core = { version = "0.6", features = ["getrandom"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+
+[dev-dependencies]
+tempfile = "3.21"
+
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 1
+
