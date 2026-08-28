@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "kpe.snapshot/v1",
+  "collectedAt": "2026-08-28T00:00:00Z",
+  "collectorVersion": "0.1.0",
+  "context": "example-offline-snapshot",
+  "serverVersion": "v1.33.4",
+  "roles": [
+    {
+      "kind": "Role",
+      "metadata": { "name": "secret-reader", "namespace": "payments" },
+      "rules": [
+        { "apiGroups": [""], "resources": ["secrets"], "verbs": ["get"] }
+      ]
+    }
+  ],
+  "clusterRoles": [
+    {
+      "kind": "ClusterRole",
+      "metadata": { "name": "deployment-viewer" },
+      "rules": [
+        { "apiGroups": ["apps"], "resources": ["deployments"], "verbs": ["get", "list", "watch"] }
+      ]
+    }
+  ],
+  "roleBindings": [
+    {
+      "kind": "RoleBinding",
+      "metadata": { "name": "alice-secrets", "namespace": "payments" },
+      "subjects": [{ "kind": "User", "name": "alice@example.com" }],
+      "roleRef": { "kind": "Role", "name": "secret-reader", "apiGroup": "rbac.authorization.k8s.io" }
+    }
+  ],
+  "clusterRoleBindings": [
+    {
+      "kind": "ClusterRoleBinding",
+      "metadata": { "name": "platform-viewers" },
+      "subjects": [{ "kind": "Group", "name": "platform-engineers" }],
+      "roleRef": { "kind": "ClusterRole", "name": "deployment-viewer", "apiGroup": "rbac.authorization.k8s.io" }
+    }
+  ]
+}

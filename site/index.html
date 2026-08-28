@@ -119,8 +119,8 @@
           <p><a href="/checks.example.json" download>Download an example access matrix</a></p>
         </div>
         <div class="terminal" aria-label="Installation commands">
-          <div class="terminal-top"><span>FIELD TERMINAL / 0.1.0</span><button class="copy-button" type="button" data-copy="cargo install --git https://github.com/B-Divyesh/sf-kube-permission-evidence kpe" aria-label="Copy install command">Copy</button></div>
-          <pre tabindex="0" aria-label="Install and report commands"><code><span class="prompt">$</span> cargo install --git https://github.com/B-Divyesh/sf-kube-permission-evidence kpe
+          <div class="terminal-top"><span>FIELD TERMINAL / 0.1.0</span><button class="copy-button" type="button" data-copy="cargo install --git https://github.com/B-Divyesh/sf-kube-permission-evidence" aria-label="Copy install command">Copy</button></div>
+          <pre tabindex="0" aria-label="Install and report commands"><code><span class="prompt">$</span> cargo install --git https://github.com/B-Divyesh/sf-kube-permission-evidence
 
 <span class="prompt">$</span> kpe report \
     --subject user:alice@example.com \
@@ -158,7 +158,7 @@
               <label for="license-token">License token</label>
               <div class="inline-form">
                 <input id="license-token" name="license" type="password" autocomplete="off" required aria-describedby="license-help">
-                <button type="submit" class="button secondary">Verify license</button>
+                <button type="submit" class="button secondary" aria-label="Verify pasted license">Verify license</button>
               </div>
               <p id="license-help">Stored only in this browser. We send it solely to Sociobot for verification.</p>
             </form>

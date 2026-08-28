@@ -25,6 +25,14 @@ repository never uses registry credentials).
 Live collection needs `kubectl` and a kubeconfig that can only `get` and
 `list` RBAC objects. Offline reports need neither a cluster nor `kubectl`.
 
+Try the complete offline path immediately after cloning:
+
+```sh
+cargo run -- report --snapshot examples/rbac-snapshot.json \
+  --subject user:alice@example.com --as-group platform-engineers \
+  --matrix examples/matrix.json --output /tmp/kpe-example
+```
+
 ## Usage
 
 ### 1. Write the questions you need to prove

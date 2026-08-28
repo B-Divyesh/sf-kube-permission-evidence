@@ -23,6 +23,7 @@ pub struct PolicyRule {
     #[serde(default)]
     pub resource_names: Vec<String>,
     #[serde(default)]
+    #[serde(rename = "nonResourceURLs", alias = "nonResourceUrls")]
     pub non_resource_urls: Vec<String>,
 }
 
@@ -112,6 +113,7 @@ pub struct AccessCheck {
     #[serde(default)]
     pub resource_name: Option<String>,
     #[serde(default)]
+    #[serde(rename = "nonResourceURL", alias = "nonResourceUrl")]
     pub non_resource_url: Option<String>,
 }
 
