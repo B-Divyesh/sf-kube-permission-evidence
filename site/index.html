@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f0e4">
+    <meta name="description" content="Trace effective Kubernetes RBAC access to every binding and rule, then export signed Markdown and JSON audit evidence.">
+    <title>Kube Permission Evidence — trace every RBAC grant</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="/specimen-map.webp" as="image" type="image/webp" fetchpriority="high">
+    <link rel="stylesheet" href="/src/style.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <div class="offline-note" id="offline-note" role="status" hidden>
+      You’re offline. The guide and demo still work; license checks will resume when you reconnect.
+    </div>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Kube Permission Evidence home">
+        <span class="brand-seal" aria-hidden="true">K</span>
+        <span>Kube Permission<br>Evidence</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#method">Method</a>
+        <a href="#specimen">Live specimen</a>
+        <a href="#install">Install</a>
+      </nav>
+      <a class="small-cta" href="#field-kit">Field kit · $49</a>
+    </header>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="kicker"><span>Field note 01</span> Read-only Kubernetes RBAC</p>
+          <h1 id="hero-title">Trace every permission to its source.</h1>
+          <p class="lede">Replace YAML spelunking and terminal screenshots with a point-in-time evidence packet that names the subject, binding, role, and exact matching rule.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#install">Install the CLI</a>
+            <a class="text-link" href="#specimen">Examine a live proof <span aria-hidden="true">↓</span></a>
+          </div>
+          <dl class="hero-facts">
+            <div><dt>Cluster writes</dt><dd>None</dd></div>
+            <div><dt>Data leaves cluster</dt><dd>Never</dd></div>
+            <div><dt>Packet formats</dt><dd>MD · JSON</dd></div>
+          </dl>
+        </div>
+        <figure class="hero-plate">
+          <img src="/specimen-map.webp" width="1200" height="800" fetchpriority="high" alt="Pressed fern specimen with roots, branches, blank evidence tags, and a rust thread tracing one path from root to leaf">
+          <figcaption><span>Fig. A</span> One permission, traced from subject to resource.</figcaption>
+        </figure>
+      </section>
+
+      <section class="read-only-band" aria-label="Read-only collection boundary">
+        <p><span class="pulse" aria-hidden="true"></span><strong>Read-only boundary</strong></p>
+        <code>get/list roles · rolebindings · clusterroles · clusterrolebindings</code>
+        <p>No agents. No token retention.</p>
+      </section>
+
+      <section class="section method" id="method" aria-labelledby="method-title">
+        <div class="section-heading">
+          <p class="kicker">The proof method</p>
+          <h2 id="method-title">A field key for effective access</h2>
+          <p>Each verdict stays attached to the evidence that produced it. When more than one path grants access, the report records all of them.</p>
+        </div>
+        <ol class="method-list">
+          <li>
+            <span class="specimen-number">01</span>
+            <h3>Collect the habitat</h3>
+            <p>Fetch only the four RBAC object families and the server version. Save a reusable snapshot for offline review.</p>
+            <code>kpe snapshot --output rbac.json</code>
+          </li>
+          <li>
+            <span class="specimen-number">02</span>
+            <h3>Test bounded questions</h3>
+            <p>Name one subject and a small JSON matrix of verbs, resources, namespaces, subresources, or URLs.</p>
+            <code>--subject user:mina --matrix checks.json</code>
+          </li>
+          <li>
+            <span class="specimen-number">03</span>
+            <h3>Preserve the provenance</h3>
+            <p>Export readable and structured companions. Sign the JSON with your own offline Ed25519 key when custody matters.</p>
+            <code>evidence.md + evidence.json</code>
+          </li>
+        </ol>
+      </section>
+
+      <section class="section specimen" id="specimen" aria-labelledby="specimen-title">
+        <div class="section-heading specimen-heading">
+          <div>
+            <p class="kicker">Live specimen</p>
+            <h2 id="specimen-title">Follow the causal path</h2>
+          </div>
+          <p>This recorded, in-browser example uses fictional RBAC data. Nothing is uploaded and no cluster is contacted.</p>
+        </div>
+        <div class="workbench">
+          <form class="case-picker" id="case-picker">
+            <label for="case-select">Permission question</label>
+            <select id="case-select" name="case">
+              <option value="secret">Can Alice get secrets in payments?</option>
+              <option value="deploy">Can Alice update deployments in payments?</option>
+              <option value="aggregate">Can the reconciler read jobs?</option>
+            </select>
+            <button type="button" class="quiet-button" id="clear-proof">Clear specimen</button>
+          </form>
+          <div class="proof-panel" id="proof-panel" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="section install" id="install" aria-labelledby="install-title">
+        <div class="install-copy">
+          <p class="kicker">Run it where the evidence lives</p>
+          <h2 id="install-title">One binary. No operator.</h2>
+          <p>Build from inspectable Rust source today. Release binaries are attached by the factory after publishing.</p>
+          <ul class="check-list">
+            <li>Works from a least-privilege kubeconfig</li>
+            <li>Runs again from a token-free snapshot</li>
+            <li>Deterministic rule matching, covered by a 20-case fixture</li>
+          </ul>
+          <p><a href="/checks.example.json" download>Download an example access matrix</a></p>
+        </div>
+        <div class="terminal" aria-label="Installation commands">
+          <div class="terminal-top"><span>FIELD TERMINAL / 0.1.0</span><button class="copy-button" type="button" data-copy="cargo install --git https://github.com/B-Divyesh/sf-kube-permission-evidence kpe" aria-label="Copy install command">Copy</button></div>
+          <pre tabindex="0" aria-label="Install and report commands"><code><span class="prompt">$</span> cargo install --git https://github.com/B-Divyesh/sf-kube-permission-evidence kpe
+
+<span class="prompt">$</span> kpe report \
+    --subject user:alice@example.com \
+    --as-group platform-engineers \
+    --matrix checks.json \
+    --output audit-2026-08
+
+<span class="muted-code">Wrote audit-2026-08.md and audit-2026-08.json
+(14 allowed, 6 denied, 1 uncertain).</span></code></pre>
+        </div>
+      </section>
+
+      <section class="section version-note" aria-labelledby="version-title">
+        <p class="margin-label">Version behavior</p>
+        <div>
+          <h2 id="version-title">Honest about what the snapshot cannot know.</h2>
+          <p>Kubernetes stores controller-resolved rules for aggregated ClusterRoles. KPE evaluates those collected rules, records the server version, and marks each affected proof uncertain. Webhook and Node authorizers remain explicitly outside the claim.</p>
+        </div>
+        <div class="stamp" aria-label="Aggregation results marked uncertain"><span>⚠</span> Marked<br>uncertain</div>
+      </section>
+
+      <section class="section field-kit" id="field-kit" aria-labelledby="field-kit-title">
+        <div class="price-note">
+          <p class="kicker">The field kit</p>
+          <h2 id="field-kit-title">Keep the evaluator free. Fund the audit workflow.</h2>
+          <p>Every operator gets complete collection, evaluation, Markdown/JSON export, signing, and verification. The one-time Field Kit adds maintained prebuilt binaries, batch subject manifests, cover-sheet templates, and priority update notes.</p>
+        </div>
+        <div class="price-block">
+          <p class="price"><span>$</span>49</p>
+          <p>One-time purchase · one team</p>
+          <a class="button primary wide" href="https://api.sociobot.in/api/v1/products/kube-permission-evidence/checkout">Buy the field kit</a>
+          <details>
+            <summary>Have a license? Restore it</summary>
+            <form id="license-form" class="license-form">
+              <label for="license-token">License token</label>
+              <div class="inline-form">
+                <input id="license-token" name="license" type="password" autocomplete="off" required aria-describedby="license-help">
+                <button type="submit" class="button secondary">Verify license</button>
+              </div>
+              <p id="license-help">Stored only in this browser. We send it solely to Sociobot for verification.</p>
+            </form>
+          </details>
+          <p class="license-status" id="license-status" role="status">No field-kit license stored.</p>
+          <div class="unlocked-tools" id="unlocked-tools" hidden>
+            <strong>Field kit unlocked</strong>
+            <p>Your release downloads and templates will appear here when the factory publishes v0.1.0.</p>
+          </div>
+          <p class="legal-note">Sociobot/Dodo is the merchant of record. Refunds are handled there and revoke the license. <a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
+        </div>
+      </section>
+
+      <section class="closing" aria-label="Get started">
+        <p class="kicker">Bring one question</p>
+        <h2>Leave with an evidence trail.</h2>
+        <a class="button light" href="#install">Install KPE 0.1.0</a>
+      </section>
+    </main>
+
+    <footer>
+      <p><span class="brand-seal small" aria-hidden="true">K</span> Kube Permission Evidence</p>
+      <p>Local-first, open source, and built for careful operators.</p>
+      <nav aria-label="Footer navigation"><a href="https://github.com/B-Divyesh/sf-kube-permission-evidence">Source</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></nav>
+    </footer>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

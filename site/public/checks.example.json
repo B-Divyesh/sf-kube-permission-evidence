@@ -1,0 +1,8 @@
+{
+  "checks": [
+    { "verb": "get", "apiGroup": "", "resource": "secrets", "namespace": "payments" },
+    { "verb": "list", "apiGroup": "apps", "resource": "deployments", "namespace": "payments" },
+    { "verb": "create", "apiGroup": "", "resource": "pods", "subresource": "exec", "namespace": "payments", "resourceName": "api-worker" },
+    { "verb": "get", "nonResourceURL": "/healthz/ready" }
+  ]
+}

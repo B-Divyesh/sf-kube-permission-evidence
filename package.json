@@ -1,0 +1,20 @@
+{
+  "name": "kube-permission-evidence-site",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config vite.config.ts",
+    "build:site": "vite build --config vite.config.ts",
+    "build:cli": "cargo build --release",
+    "build": "npm run build:cli && npm run build:site",
+    "test:site": "npm run build:site && playwright test",
+    "test": "cargo test --all-targets && npm run test:site"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.58.2",
+    "typescript": "5.9.2",
+    "vite": "7.3.6"
+  }
+}

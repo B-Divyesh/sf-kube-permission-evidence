@@ -4,34 +4,39 @@ use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 
 pub fn parse_subject(value: &str) -> Result<SubjectIdentity, String> {
-    let parts: Vec<&str> = value.split(':').collect();
-    match parts.as_slice() {
-        [kind, name] if kind.eq_ignore_ascii_case("user") && !name.is_empty() => {
-            Ok(SubjectIdentity {
-                kind: "User".into(),
-                name: (*name).into(),
-                namespace: None,
-            })
-        }
-        [kind, name] if kind.eq_ignore_ascii_case("group") && !name.is_empty() => {
-            Ok(SubjectIdentity {
-                kind: "Group".into(),
-                name: (*name).into(),
-                namespace: None,
-            })
-        }
-        [kind, namespace, name]
-            if (kind.eq_ignore_ascii_case("serviceaccount") || kind.eq_ignore_ascii_case("sa"))
-                && !namespace.is_empty()
-                && !name.is_empty() =>
+    if let Some(name) = value.strip_prefix("user:").filter(|name| !name.is_empty()) {
+        return Ok(SubjectIdentity {
+            kind: "User".into(),
+            name: name.into(),
+            namespace: None,
+        });
+    }
+    if let Some(name) = value.strip_prefix("group:").filter(|name| !name.is_empty()) {
+        return Ok(SubjectIdentity {
+            kind: "Group".into(),
+            name: name.into(),
+            namespace: None,
+        });
+    }
+    let value = value
+        .strip_prefix("serviceaccount:")
+        .or_else(|| value.strip_prefix("sa:"));
+    if let Some(value) = value {
+        if let Some((namespace, name)) = value.split_once(':')
+            && !namespace.is_empty()
+            && !name.is_empty()
+            && !name.contains(':')
         {
             Ok(SubjectIdentity {
                 kind: "ServiceAccount".into(),
-                name: (*name).into(),
-                namespace: Some((*namespace).into()),
+                name: name.into(),
+                namespace: Some(namespace.into()),
             })
+        } else {
+            Err("expected serviceaccount:<namespace>:<name>".into())
         }
-        _ => Err("expected user:<name>, group:<name>, or serviceaccount:<namespace>:<name>".into()),
+    } else {
+        Err("expected user:<name>, group:<name>, or serviceaccount:<namespace>:<name>".into())
     }
 }
 
@@ -284,6 +289,7 @@ mod tests {
             parse_subject("user:alice@example.com").unwrap().name,
             "alice@example.com"
         );
+        assert_eq!(parse_subject("user:oidc:alice").unwrap().name, "oidc:alice");
         assert_eq!(
             parse_subject("serviceaccount:payments:worker")
                 .unwrap()
