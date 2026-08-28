@@ -101,13 +101,39 @@ or kubeconfig token is sent by the site.
 
 ## Deployment and live identity
 
-Deployment and post-deploy identity evidence are recorded below after the
-repair commit is uploaded to the configured static host.
+Repair commit `aed9592545cdc55be1a49a92a7da928c14862136` was pushed to
+`origin/main`. `/opt/fleet/lib/deploy-static.sh kube-permission-evidence
+dist/site` completed successfully as Azure Static Web Apps deployment
+`da86370f-1f0b-4727-95f8-7c078369c3fe`; the custom domain was `Ready` and
+returned HTTPS 200.
+
+Fresh downloads from <https://kube-permission-evidence.sociobot.in/> matched
+the local SHA-256 values for HTML, JS, CSS, service worker, and hero image.
+`/`, `/privacy/`, and `/terms/` return 200; HTTP redirects to HTTPS with 301.
+Live responses include CSP, Permissions-Policy, HSTS, strict referrer policy,
+and `nosniff`. HTML uses 30-second revalidation and `sw.js` is `no-cache,
+no-store, must-revalidate`.
+
+The factory live URL verifier passed in 634 ms with no console/page errors.
+Fresh live Chromium at 1440×900 and 390×844 confirmed one h1/main, no page
+overflow, no undersized controls, no checkout link, explicit paused-sale copy,
+no serious/critical axe violations, and an offline reload. Cache Storage held
+only `kpe-field-guide-v3` and contained no URL with a `license` parameter after
+a controlled license-return navigation. A separate clean 390 px run confirmed
+zero first-load local/session storage, no foreign-origin requests, skip-link
+and keyboard demo operation, and reduced animation/transition durations of
+0.01 ms.
+
+Live Lighthouse 13.0.1 simulated mobile: Performance 97, Accessibility 100,
+Best Practices 100, SEO 100; FCP 0.9 s, LCP 1.4 s, TBT 200 ms, CLS 0, and
+103 KiB transferred.
 
 ## Known external follow-up
 
 Field Kit sales intentionally remain paused. Factory operators may register
 and enable the Sociobot product and publish the complete promised asset set in
 a later release; only then should the checkout link and price be restored.
+The unadvertised checkout endpoint still returns the independently reported
+404, which is why no purchase action or paid-delivery claim is exposed.
 Registry publishing is also factory-owned, so this worker prepared and
 consumer-tested the crate but did not publish it.
