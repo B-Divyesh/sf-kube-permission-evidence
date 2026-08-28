@@ -138,6 +138,7 @@ pub fn evaluate(
             "This packet evaluates Kubernetes RBAC objects only; webhook, Node, and other authorizers are not represented.".into(),
             "External identity-provider group membership is included only when supplied with --as-group.".into(),
             "Aggregated ClusterRole rules are controller-resolved and marked uncertain because results can vary with installed APIs and Kubernetes version.".into(),
+            "Rules constrained by resourceNames never grant top-level create or deletecollection checks; named list/watch checks require a matching metadata.name fieldSelector.".into(),
         ],
         signature: None,
     }
@@ -261,10 +262,32 @@ fn rule_matches(rule: &PolicyRule, request: &AccessCheck) -> bool {
     if rule.resource_names.is_empty() {
         return true;
     }
-    request
+    let Some(name) = request
         .resource_name
         .as_ref()
-        .is_some_and(|name| rule.resource_names.iter().any(|allowed| allowed == name))
+        .filter(|name| rule.resource_names.iter().any(|allowed| allowed == *name))
+    else {
+        return false;
+    };
+
+    match request.verb.as_str() {
+        "create" if request.subresource.is_none() => false,
+        "deletecollection" => false,
+        "list" | "watch" => request
+            .field_selector
+            .as_deref()
+            .is_some_and(|selector| field_selector_matches_name(selector, name)),
+        _ => true,
+    }
+}
+
+fn field_selector_matches_name(selector: &str, resource_name: &str) -> bool {
+    selector.split(',').map(str::trim).any(|requirement| {
+        requirement
+            .strip_prefix("metadata.name==")
+            .or_else(|| requirement.strip_prefix("metadata.name="))
+            .is_some_and(|selected_name| selected_name == resource_name)
+    })
 }
 
 fn contains_or_star(values: &[String], expected: &str) -> bool {
@@ -316,6 +339,7 @@ mod tests {
             subresource: Some("exec".into()),
             namespace: Some("dev".into()),
             resource_name: Some("shell".into()),
+            field_selector: None,
             non_resource_url: None,
         };
         assert!(rule_matches(&rule, &check));
@@ -337,6 +361,7 @@ mod tests {
             subresource: None,
             namespace: None,
             resource_name: None,
+            field_selector: None,
             non_resource_url: Some("/healthz/ready".into()),
         };
         assert!(rule_matches(&rule, &check));

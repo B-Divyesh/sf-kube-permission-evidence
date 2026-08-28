@@ -112,6 +112,8 @@ pub struct AccessCheck {
     pub namespace: Option<String>,
     #[serde(default)]
     pub resource_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub field_selector: Option<String>,
     #[serde(default)]
     #[serde(rename = "nonResourceURL", alias = "nonResourceUrl")]
     pub non_resource_url: Option<String>,
@@ -127,6 +129,12 @@ impl AccessCheck {
             (None, None) => Err("set resource or nonResourceURL".into()),
             _ if self.subresource.is_some() && self.resource.is_none() => {
                 Err("subresource requires resource".into())
+            }
+            _ if self.field_selector.is_some() && self.resource_name.is_none() => {
+                Err("fieldSelector requires resourceName".into())
+            }
+            _ if self.field_selector.is_some() && self.verb != "list" && self.verb != "watch" => {
+                Err("fieldSelector is supported only for list or watch checks".into())
             }
             _ => Ok(()),
         }

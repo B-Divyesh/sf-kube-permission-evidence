@@ -49,9 +49,19 @@ cargo run -- report --snapshot examples/rbac-snapshot.json \
 }
 ```
 
-Every field is explicit. For a named object, add `"resourceName":"api-key"`.
-For a non-resource endpoint, use `{"verb":"get","nonResourceURL":"/healthz"}`
-instead of resource fields.
+Every field is explicit. For a named `get`, `update`, `patch`, `delete`, or
+subresource request, add `"resourceName":"api-key"`. A `list` or `watch`
+constrained by a rule's `resourceNames` must also include the field selector
+sent by the client, for example:
+
+```json
+{"verb":"list", "resource":"secrets", "namespace":"payments", "resourceName":"api-key", "fieldSelector":"metadata.name=api-key"}
+```
+
+Kubernetes cannot restrict top-level `create` or `deletecollection` requests by
+name, so `resourceNames` rules never grant those checks. For a non-resource
+endpoint, use `{"verb":"get","nonResourceURL":"/healthz"}` instead of
+resource fields.
 
 ### 2. Create the evidence packet
 
@@ -117,7 +127,8 @@ the snapshot.
   binding namespace.
 - ClusterRoleBinding→ClusterRole grants across namespaces.
 - Exact and wildcard verbs, API groups, resources, and non-resource URLs.
-- Subresources (`pods/exec`) and `resourceNames` constraints.
+- Subresources (`pods/exec`) and verb-correct `resourceNames` constraints,
+  including explicit `metadata.name` selectors for named `list`/`watch`.
 - Direct User, Group, and ServiceAccount subjects, including Kubernetes'
   standard service-account groups.
 - Every granting path, not only the first match.
@@ -151,6 +162,8 @@ npm install
 npm test
 npm run build         # Rust release binary + site at dist/site/
 npm run build:site    # static site only at dist/site/
+npm run typecheck
+npm run lint
 cargo package --allow-dirty
 ```
 

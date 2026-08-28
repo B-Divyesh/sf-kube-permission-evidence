@@ -1,109 +1,113 @@
-# Handoff — Kube Permission Evidence v0.1.0
+# Repair handoff — Kube Permission Evidence v0.1.0
 
-## Independent verification status — FAIL
+## Status
 
-Candidate commit `854ea6da9d310e06d48d364eed9d2c084aa002eb` was independently
-verified on 2026-08-28 against
-<https://kube-permission-evidence.sociobot.in/>. **Do not release this
-candidate as accepted.** The live deployment matches the candidate byte for
-byte, but the evaluator reports an **ALLOWED** top-level `create` request when
-the only rule is constrained by `resourceNames`. Kubernetes does not authorize
-top-level create by resource name, so this is a high-severity false-positive
-audit conclusion. The full reproducible evidence, additional quality/header/
-mobile defects, passing checks, and remediation requirements are in
-[`verification.md`](verification.md).
+All release-blocking findings from independent verification commit
+`d14931809b8f430b77416a4d5429ac1e6df19a20` of candidate
+`854ea6da9d310e06d48d364eed9d2c084aa002eb` are repaired and covered by
+regression tests. The original Rust single-binary CLI and static Vite site
+remain the release artifacts.
 
-Fresh verification did confirm that `npm test`, `npm run build`, Clippy,
-doctests, `cargo package`, clean-consumer installation, live offline reload,
-privacy/network checks, axe, and Lighthouse otherwise completed successfully.
-`cargo fmt --all -- --check` and `npx tsc --noEmit` fail on the committed
-candidate and must also be remediated.
+## Repairs and exact regressions
 
-## What shipped
+- `resourceNames` is now evaluated with Kubernetes verb semantics. A matching
+  name cannot grant top-level `create` or `deletecollection`; named `list` and
+  `watch` require an explicit matching `metadata.name` field selector.
+  `tests/access_matrix.rs` covers denied create/deletecollection, missing and
+  mismatched selectors, accepted `=` and `==` selectors, ordinary named get,
+  and named subresource create. `tests/cli.rs` reproduces the verifier's exact
+  release-binary false-grant fixture and asserts denied, no grants, and a
+  denied summary.
+- `cargo fmt --all -- --check` and Clippy are now the `npm run lint` gate, and
+  the primary `npm test` command runs that gate so the formatting regression
+  cannot pass CI.
+- TypeScript checking is runnable from a clean clone: `@types/node` and
+  `ESNext.Disposable` support are locked, `npm run typecheck` is part of
+  `npm test`, and browser tests run against the built production site.
+- Azure Static Web Apps now receives `staticwebapp.config.json` with CSP,
+  Permissions-Policy, strict referrer/nosniff headers, one-year immutable asset
+  caching, and no-store service-worker caching. The browser suite validates the
+  built deployment policy artifact.
+- All visible links, buttons, inputs, selects, and summaries on `/`,
+  `/privacy/`, and `/terms/` measure at least 44 by 44 CSS pixels at a 390 px
+  viewport. This is asserted in Playwright.
+- The service worker uses versioned cache `kpe-field-guide-v2`, deletes stale
+  caches, calls `skipWaiting()` and `clients.claim()`, and only caches successful
+  responses. A browser regression proves immediate control and offline reload.
 
-- A Rust `kpe` single binary with four focused commands: `snapshot`, `report`,
-  `keygen`, and `verify`.
-- Read-only live collection through five documented kubectl calls. KPE passes a
-  requested context/kubeconfig to kubectl but never parses or stores its token.
-- Offline snapshot evaluation for User, Group, and ServiceAccount subjects;
-  Kubernetes service-account groups are derived and external groups are
-  explicit inputs.
-- Exact evaluation of namespaced RoleBindings, ClusterRoleBindings, Role and
-  ClusterRole refs, wildcards, subresources, `resourceNames`, and non-resource
-  URL suffix wildcards.
-- Complete causal grants in both Markdown and JSON, with SHA-256 source
-  fingerprinting and explicit caveats. Aggregated ClusterRole results are
-  marked uncertain and linked to the captured Kubernetes server version.
-- Optional local Ed25519 key generation, evidence signing, tamper detection,
-  and offline signature verification.
-- A production static site at `dist/site/` with install guidance, a keyboard-
-  accessible recorded evidence walkthrough, mobile layout, empty/offline/error
-  states, privacy and terms pages, and a service-worker cache.
-- One-time $49 Field Kit purchase and restore flow using only the Sociobot
-  billing API. The cached verdict is optimistic at first paint and refreshed
-  no more than daily. Core evaluation, export, signing, accessibility, and
-  safety remain free.
-- Original botanical field-guide hero generated with the `factory-image`
-  deployment and optimized from PNG to a 92 KB WebP. The exact prompt and
-  provenance are in `.factory/design.md` and `.factory/specimen-map.prompt.json`.
+## Clean verification evidence
 
-## Run and verify
+Executed on 2026-08-28 from `/work/repo`:
 
 ```sh
-npm install
+npm ci
+npm audit --audit-level=high
 npm test
 npm run build
+cargo test --doc
 cargo package --allow-dirty
 ```
 
-`npm test` runs 8 Rust tests (including the documented end-to-end signed packet
-flow and a 20-case RBAC fixture) plus 6 Playwright checks across desktop,
-390 px mobile, license return, offline behavior, privacy, and terms. Axe reports
-no serious or critical violations.
+Results:
 
-The exact deployment build command is `npm run build`; the static artifact is
-`dist/site/index.html`. The release binary is `target/release/kpe`. The verified
-source package is `target/package/kube-permission-evidence-0.1.0.crate`; the
-factory can reproduce it with `cargo package` from a clean tree and owns
-publishing credentials.
+- Clean install passed; npm audit found 0 vulnerabilities.
+- `npm test` passed TypeScript, rustfmt, Clippy with warnings denied, 11 Rust
+  tests, the documented CLI integration flow, and 11 Chromium tests.
+- Browser coverage includes desktop, 390 px mobile, keyboard-only operation,
+  all three routes, axe serious/critical checks, paid-license return and URL
+  stripping, touch targets, production response policy, reduced-motion CSS,
+  immediate service-worker control, and offline reload.
+- Factory `verify-url.sh` against the production preview returned HTTP 200 in
+  525 ms with title, `lang=en`, one h1, main landmark, all image alt text,
+  labeled buttons, and zero console/page errors.
+- A separate privacy/network run made requests only to the site origin, wrote
+  no local storage on ordinary first load, showed no horizontal overflow at
+  390 px, and measured a visible `3px solid rgb(155, 77, 50)` focus outline.
+  Reduced-motion animation duration was `0.01ms`.
+- Lighthouse 13.4.1 simulated mobile: Performance 100, Accessibility 100, Best
+  Practices 100, SEO 100; FCP 1.0 s, LCP 1.5 s, TBT 0 ms, CLS 0.
+- Built payloads: JavaScript 5,954 bytes raw / 2.68 KB gzip; CSS 14,238 bytes
+  raw / 4.10 KB gzip; hero WebP 93,322 bytes. There are no downloaded fonts.
+- `cargo test --doc`: 1 passed. `cargo package` verified 25 files, 136.9 KiB
+  unpacked / 36.2 KiB compressed. Archive SHA-256:
+  `ddd85472b57564721c20874dc1929e2ab8369eebb07421be59bbeaa824ef8a8e`.
+- A fresh `cargo install --path . --root <temp>` produced one 1,590,752-byte
+  binary. The installed CLI created a mode-`0600` Ed25519 key, generated the
+  documented packet with 2 allowed and 2 denied checks, and returned
+  `{"valid":true,"subject":"user:alice@example.com"}` from `verify --json`.
+- Release binary SHA-256:
+  `766edb2b5c3c1de30ce5b56b018eb5122f66a74be1f465d14ce42a854b0b5cdb`.
+  Built landing HTML SHA-256:
+  `69da1449f15598a9b868f42b555df81e3b3e775e106ea41296de1362900b9f2a`.
 
-Manual CLI smoke test used:
+## Run, package, and deploy
 
 ```sh
-kpe keygen --output /tmp/audit.key
-kpe report --snapshot examples/rbac-snapshot.json \
-  --subject user:alice@example.com --as-group platform-engineers \
-  --matrix examples/matrix.json --output /tmp/evidence \
-  --signing-key /tmp/audit.key
-kpe verify /tmp/evidence.json
+npm ci
+npm test
+npm run build
+cargo package
+/opt/fleet/lib/deploy-static.sh kube-permission-evidence dist/site
 ```
 
-Result: 2 allowed, 2 denied; signature valid; signing key mode `0600`.
+The CLI release binary is `target/release/kpe`, the source package is
+`target/package/kube-permission-evidence-0.1.0.crate`, and the static deployment
+root is `dist/site/`. Registry and GitHub release publishing were intentionally
+not performed; the factory owns those credentials.
 
-## Quality evidence
+## Known external gaps
 
-- Lighthouse 13.4.1, production build, simulated mobile: Performance 100,
-  Accessibility 100, Best Practices 100, SEO 100.
-- FCP 1.0 s; LCP 1.6 s; TBT 0 ms; CLS 0.
-- Initial authored JS: 5.95 KB raw / 2.68 KB gzip; CSS: 14.09 KB raw /
-  4.08 KB gzip; hero: 93,322 bytes. No runtime CDN or webfont requests.
-- Factory `verify-url.sh`: HTTP 200, 535 ms network-idle load, title/lang/main
-  present, exactly one h1, zero images missing alt, zero unlabeled buttons, and
-  zero browser console errors.
-- `npm audit --audit-level=high`: 0 vulnerabilities.
-- `cargo clippy --all-targets -- -D warnings`: passed.
+- No Kubernetes API was available in the worker, so live collection was not
+  repeated. The read-only kubectl adapter is unchanged; offline evaluator and
+  report paths were exercised end to end.
+- As of 2026-08-28, the production Sociobot checkout identity for
+  `kube-permission-evidence` returns HTTP 404 because the paid product has not
+  been registered. The repository correctly uses only the required Sociobot
+  URL and API contract. Product registration and paid fulfillment are factory
+  infrastructure work and are not performed from this repository.
+- Post-deployment URL identity, response headers, and artifact hashes are
+  recorded below after the work-order deployment.
 
-## Known gaps and next steps
+## Post-deployment evidence
 
-- No real Kubernetes API was available in the build container, so live
-  collection was not exercised against a cluster. Collection is intentionally
-  thin kubectl orchestration; offline fixtures exercise the evaluator and all
-  report paths.
-- KPE proves RBAC grants only. Webhook, Node, ABAC, and external IdP membership
-  cannot be inferred from these four object families and are stated as
-  limitations in every packet.
-- The factory must register the paid product and attach maintained release
-  binaries/templates before the Field Kit fulfillment panel can expose those
-  downloads. The production checkout and verification URLs already follow the
-  required slug-based contract; no product ID is hardcoded.
-- Registry and GitHub release publishing were intentionally not performed.
+Pending deployment of this repair commit.

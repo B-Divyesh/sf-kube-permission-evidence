@@ -54,6 +54,7 @@ fn check(verb: &str, group: &str, resource: &str, namespace: Option<&str>) -> Ac
         subresource: None,
         namespace: namespace.map(str::to_owned),
         resource_name: None,
+        field_selector: None,
         non_resource_url: None,
     }
 }
@@ -192,6 +193,7 @@ fn seeded_twenty_case_matrix_is_explained_exactly() {
             subresource: None,
             namespace: None,
             resource_name: None,
+            field_selector: None,
             non_resource_url: Some("/healthz/ready".into()),
         },
         AccessCheck {
@@ -201,6 +203,7 @@ fn seeded_twenty_case_matrix_is_explained_exactly() {
             subresource: None,
             namespace: None,
             resource_name: None,
+            field_selector: None,
             non_resource_url: Some("/healthz/ready".into()),
         },
         check("get", "batch", "jobs", Some("prod")),
@@ -263,4 +266,96 @@ fn service_account_default_namespace_and_groups_are_honored() {
     );
     assert!(report.checks[0].allowed);
     assert_eq!(report.checks[0].grants[0].matched_subject.kind, "Group");
+}
+
+#[test]
+fn resource_names_follow_kubernetes_verb_and_field_selector_semantics() {
+    let mut named_rule = rule(
+        &[""],
+        &["pods", "pods/exec"],
+        &["create", "deletecollection", "list", "watch", "get"],
+    );
+    named_rule.resource_names = vec!["approved".into()];
+    let snapshot = Snapshot {
+        schema_version: "kpe.snapshot/v1".into(),
+        collected_at: "2026-08-28T00:00:00Z".into(),
+        collector_version: "test".into(),
+        context: "resource-name-regression".into(),
+        server_version: "v1.33.4".into(),
+        roles: vec![],
+        cluster_roles: vec![Role {
+            kind: "ClusterRole".into(),
+            metadata: metadata("named-pods", None),
+            rules: vec![named_rule],
+            aggregation_rule: None,
+        }],
+        role_bindings: vec![],
+        cluster_role_bindings: vec![binding(
+            "ClusterRoleBinding",
+            "alice-named-pods",
+            None,
+            vec![subject("User", "alice", None)],
+            "ClusterRole",
+            "named-pods",
+        )],
+    };
+
+    let named = |verb: &str, selector: Option<&str>| {
+        let mut request = check(verb, "", "pods", Some("payments"));
+        request.resource_name = Some("approved".into());
+        request.field_selector = selector.map(str::to_owned);
+        request
+    };
+    let mut subresource_create = named("create", None);
+    subresource_create.subresource = Some("exec".into());
+    let report = evaluate(
+        &snapshot,
+        &parse_subject("user:alice").unwrap(),
+        &[],
+        &AccessMatrix {
+            checks: vec![
+                named("create", None),
+                named("deletecollection", None),
+                named("list", None),
+                named("watch", Some("metadata.name=other")),
+                named("list", Some("metadata.name=approved")),
+                named("watch", Some("metadata.name==approved")),
+                named("get", None),
+                subresource_create,
+            ],
+        },
+    );
+
+    assert_eq!(
+        report
+            .checks
+            .iter()
+            .map(|result| result.allowed)
+            .collect::<Vec<_>>(),
+        vec![false, false, false, false, true, true, true, true]
+    );
+    assert!(
+        report.checks[..4]
+            .iter()
+            .all(|check| check.grants.is_empty())
+    );
+    assert_eq!(report.summary.allowed, 4);
+    assert_eq!(report.summary.denied, 4);
+}
+
+#[test]
+fn field_selector_state_is_bounded_to_named_list_and_watch_checks() {
+    let mut request = check("list", "", "pods", Some("payments"));
+    request.field_selector = Some("metadata.name=approved".into());
+    assert_eq!(
+        request.validate().unwrap_err(),
+        "fieldSelector requires resourceName"
+    );
+
+    request.resource_name = Some("approved".into());
+    request.verb = "get".into();
+    assert_eq!(
+        request.validate().unwrap_err(),
+        "fieldSelector is supported only for list or watch checks"
+    );
 }

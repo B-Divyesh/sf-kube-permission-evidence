@@ -33,7 +33,7 @@ button, select, input, a { -webkit-tap-highlight-color: transparent; }
 .offline-note { padding: 8px 24px; color: #fff; text-align: center; background: var(--ochre); font-size: 14px; }
 
 .site-header { min-height: 88px; padding: 16px clamp(20px, 5vw, 72px); border-bottom: 1px solid var(--rule); display: grid; grid-template-columns: 1fr auto 1fr; gap: 32px; align-items: center; }
-.brand { width: fit-content; display: flex; align-items: center; gap: 12px; color: var(--ink); font-family: var(--serif); font-weight: 700; line-height: 1.05; text-decoration: none; }
+.brand { width: fit-content; min-height: 44px; display: flex; align-items: center; gap: 12px; color: var(--ink); font-family: var(--serif); font-weight: 700; line-height: 1.05; text-decoration: none; }
 .brand-seal { display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 auto; border: 1px solid var(--moss); border-radius: 50%; box-shadow: inset 0 0 0 4px var(--paper), inset 0 0 0 5px var(--moss); color: var(--moss); font-size: 22px; font-style: italic; }
 .brand-seal.small { width: 32px; height: 32px; font-size: 16px; box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 4px var(--moss); }
 .site-header nav { display: flex; gap: 32px; font-size: 14px; }
@@ -118,7 +118,7 @@ select, input { width: 100%; min-height: 48px; padding: 10px 12px; border: 1px s
 .check-list li::before { content: "✓"; position: absolute; left: 0; color: var(--success); font-weight: 800; }
 .terminal { min-width: 0; color: #eef4eb; background: #17231c; box-shadow: 12px 12px 0 var(--clay); }
 .terminal-top { min-height: 52px; padding: 8px 12px 8px 20px; border-bottom: 1px solid #52645a; display: flex; align-items: center; justify-content: space-between; color: #bdcbbf; font-size: 12px; }
-.copy-button { min-width: 64px; min-height: 36px; border: 1px solid #93a99a; color: #fff; background: transparent; cursor: pointer; }
+.copy-button { min-width: 64px; min-height: 44px; border: 1px solid #93a99a; color: #fff; background: transparent; cursor: pointer; }
 .terminal pre { margin: 0; padding: 28px; overflow-x: auto; font: 13px/1.8 var(--mono); }
 .terminal code { font: inherit; }
 .prompt { color: #d89a70; }
@@ -154,6 +154,7 @@ summary { min-height: 48px; padding: 12px 0; cursor: pointer; font-weight: 800; 
 footer { padding: 40px clamp(20px, 5vw, 72px); display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; gap: 24px; color: var(--muted); font-size: 13px; }
 footer > p:first-child { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--serif); font-weight: 700; }
 footer nav { display: flex; justify-content: flex-end; gap: 24px; }
+footer nav a, .legal-note a, .install-copy > p a, .legal-main a { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; }
 .toast { position: fixed; right: 24px; bottom: 24px; z-index: 50; max-width: 320px; padding: 12px 16px; color: #fff; background: var(--ink); box-shadow: 4px 4px 0 var(--clay); }
 .toast:empty { display: none; }
 

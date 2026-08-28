@@ -5,15 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.config.ts",
+    "preview": "vite preview --config vite.config.ts",
     "build:site": "vite build --config vite.config.ts",
     "build:cli": "cargo build --release",
     "build": "npm run build:cli && npm run build:site",
+    "typecheck": "tsc --noEmit",
+    "lint": "cargo fmt --all -- --check && cargo clippy --all-targets -- -D warnings",
     "test:site": "npm run build:site && playwright test",
-    "test": "cargo test --all-targets && npm run test:site"
+    "test": "npm run typecheck && npm run lint && cargo test --all-targets && npm run test:site"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.10.2",
     "@playwright/test": "1.58.2",
+    "@types/node": "24.3.0",
     "typescript": "5.9.2",
     "vite": "7.3.6"
   }
