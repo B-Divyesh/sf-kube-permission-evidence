@@ -44,6 +44,15 @@ test('license return is stored, stripped, and verified', async ({ page }) => {
   expect(await page.evaluate(() => localStorage.getItem('sb_license:kube-permission-evidence'))).toBe('test-token');
 });
 
+test('offline state is explicit without disabling the demo', async ({ page, context }) => {
+  await page.goto('/');
+  await context.setOffline(true);
+  await expect(page.getByText('You’re offline.')).toBeVisible();
+  await page.getByLabel('Permission question').selectOption('deploy');
+  await expect(page.getByText('DENIED', { exact: true })).toBeVisible();
+  await context.setOffline(false);
+});
+
 for (const route of ['/privacy/', '/terms/']) {
   test(`${route} has one main heading and no serious accessibility violations`, async ({ page }) => {
     await page.goto(route);
