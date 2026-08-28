@@ -1,0 +1,10 @@
+{
+  "slug": "kube-permission-evidence",
+  "title": "Kube Permission Evidence",
+  "territory": "devtools-data",
+  "artifact_class": "cli",
+  "user": "Kubernetes operators preparing audits or permission changes who need a readable proof of effective access without making cluster mutations.",
+  "smallest_useful_product": "A read-only CLI that collects RBAC objects, evaluates a bounded subject/resource matrix, and creates a Markdown/JSON evidence packet listing every binding and rule that grants access.",
+  "constraints": "Require read-only kubeconfig permissions; never retain tokens; make Kubernetes-version behavior explicit; mark uncertain aggregation-rule results.",
+  "monetization": "one-time"
+}
