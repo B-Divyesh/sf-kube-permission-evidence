@@ -1,93 +1,131 @@
-# Review 1 handoff — FAIL
+# Repair 3 handoff — PASS
 
 ## Result
 
-Review work order `kube-permission-evidence-review-1` is **FAIL** for live
-implementation `aed9592164633ab4ef8f7ab9e5da082368f4ac7e` at
-<https://kube-permission-evidence.sociobot.in/>. The documentation head entering
-the review was `3c058becd13b80c2d105ed8b89df73414af521ea`; later commits after the
-implementation contain reports only.
+Work order `kube-permission-evidence-repair-3` resolves every finding in
+`.factory/review-1.md`. The deployed implementation is
+`98eb121448edd957f8494df9577b7c47dcbc158b` at
+<https://kube-permission-evidence.sociobot.in/>. The final documentation commit
+is the commit containing this handoff; product files are unchanged after the
+implementation SHA.
 
-The full evidence is in `.factory/review-1.md`. The result is 10 findings
-(5 high, 5 medium) and 34 public claim groups without declared claim tests.
+Kube Permission Evidence remains a read-only Rust CLI for Kubernetes operators
+preparing audits or permission changes. Its first action is a one-click sample
+on the site or `kpe demo` in a terminal.
 
-## Main open work
+## What changed
 
-- Reject unauthenticated unknown fields in signed packets.
-- Let auditors require an expected signer key or fingerprint.
-- Reject unknown access-matrix fields instead of silently changing a question.
-- Add the required CLI sample demo, `/demo` state, persistent sample label,
-  reset, exit action, and `.factory/demo.md`.
-- Add `.factory/claims.json` with one `@claim:` test per public promise.
-- Correct the incomplete collector command list.
-- Replace metaphor copy and add `.factory/copy-audit.md`.
-- Add a real 404 response/page, full metadata, consistent legal-page footer and
-  navigation, Param Factory credit, and build identifier.
+- Signed packets now reject unknown JSON fields at every authenticated packet
+  level. Access-matrix objects also reject misspelled or unknown fields.
+- `kpe verify` can require an approved public key or SHA-256 signer
+  fingerprint. Its output distinguishes content integrity from signer trust.
+- `kpe keygen` can write a public-key file for separate delivery.
+- `kpe demo` writes a realistic four-check packet and bundled inputs to a new
+  directory without kubectl, a cluster, or persistent application state.
+- `/demo/` is a real one-click browser sample. It has a persistent sample-data
+  label, Reset demo, and Start for real. Demo selection uses only
+  `sessionStorage` key `demo:kpe:selected-case`.
+- `.factory/claims.json` declares 34 public claims. Each has one matching,
+  outcome-based `@claim:<id>` browser test.
+- The landing page now states the job, audience, first action, and three facts
+  before scrolling. Metaphor headings and unclear wording were removed.
+- Root, demo, privacy, terms, and 404 pages have route-specific titles,
+  metadata, shared navigation/footer, product art, and Param Factory credit.
+- Unknown URLs now return the designed 404 page with HTTP 404.
+- README now lists every kubectl call and documents demo, trust, package, and
+  clean verification workflows.
+- The service worker caches the complete site and demo for offline use while
+  excluding license-bearing URLs.
+- The catalog description is verb-first and 100 characters. It is copied to
+  `/work/.evidence/catalog-description.txt`.
 
-## What was verified
+## Finding disposition
 
-From a clean detached checkout of the implementation candidate:
+All 10 current findings are closed:
+
+1. Unknown signed JSON fields: rejected by strict deserialization tests.
+2. Trusted signer enforcement: public-key and fingerprint match/mismatch paths
+   pass in source and installed-package tests.
+3. Matrix typos: rejected before evaluation.
+4. Demo contract: CLI and browser demos are present, isolated, resettable, and
+   populated.
+5. Claims contract: all 34 manifest commands pass independently.
+6. Plain words: first-screen structure and `.factory/copy-audit.md` pass.
+7. Missing route: designed page returns HTTP 404.
+8. Metadata: route titles, canonical links, share image, and touch icon pass.
+9. Site structure: shared header, footer, legal links, attribution, and build
+   identifier are present on every page.
+10. Collector documentation: all safe kubectl calls and flag behavior are
+    listed.
+
+Earlier repair findings remain covered: `resourceNames` semantics, wildcard
+subresources, format/type gates, cache headers, mobile targets, service-worker
+updates, license-verdict token binding, and license URL cache exclusion.
+
+## Verification
+
+The following passed from clean detached checkout
+`/tmp/kpe-repair3-final.Xs80Qf`:
 
 ```text
-npm ci                                      PASS
-npm audit --audit-level=high                PASS — 0 vulnerabilities
-npm test                                    PASS — 14 Rust + 14 Chromium tests
+npm ci                                      PASS — 0 vulnerabilities
+npm audit --audit-level=high                PASS
+npm test                                    PASS — 18 Rust + 47 browser tests
 npm run build                               PASS — release CLI + dist/site
 cargo test --doc                            PASS — 1
 cargo package --locked --allow-dirty        PASS — 25 files
+all 34 claims.json commands independently   PASS
 clean packaged cargo install                PASS — kpe 0.1.0
-offline report/sign/verify                  PASS for unchanged packet
-unknown signed fields                       FAIL — accepted at four levels
-trusted signer enforcement                  FAIL — unavailable
-unknown matrix field                        FAIL — changed a verdict silently
-CLI demo                                    FAIL — unavailable
+installed kpe demo                          PASS — 4 checks, 2 allowed, 2 denied
+installed trusted signer match/mismatch     PASS
+factory verify-url, local and live          PASS
 ```
 
-The installed artifact also passed documented output, exit-code, invalid-input,
-missing-tool, unwritable-output, key-overwrite, and unsigned-packet recovery
-paths. A controlled kubectl process proved that collection stayed read-only.
-It also showed the two safe calls missing from README's exclusive list.
+The production site ships 3.06 KiB gzip JavaScript and 4.58 KiB gzip CSS.
+Local Lighthouse scored 100 in Performance, Accessibility, Best Practices,
+and SEO; LCP was 1.51 s, CLS 0, and TBT 0 ms.
 
-Fresh live desktop and 390 px phone contexts covered the root, privacy, terms,
-demo fallback, missing route, specimen states, keyboard, focus, reduced motion,
-license failure recovery, storage, requests, links, service-worker update, and
-offline reload. Playwright axe found no serious or critical issue. There were
-no console errors, undersized targets, horizontal overflow, or third-party
-first-load requests.
+Fresh live desktop and iPhone-size contexts verified the job, audience, and
+sample action before scrolling; populated demo output; persistent sample
+label; reload; reset; exit; unchanged real-data sentinel; same-origin-only demo
+requests; keyboard use; focus; reduced motion; offline home and demo; no
+horizontal overflow; and zero unexpected console errors. Axe found zero
+serious or critical issues on every route. The one console 404 entry from the
+intentional missing-page navigation was classified as expected.
 
-Lighthouse mobile scored 100 for Performance, Accessibility, Best Practices,
-and SEO. FCP was 1.01 s, LCP 1.37 s, TBT 41 ms, CLS 0, and transfer about
-103 KiB. JavaScript, CSS, hero image, and font budgets pass.
+Live Lighthouse scored 100 in Performance, Accessibility, Best Practices, and
+SEO. LCP was 1.36 s, CLS 0, and TBT 41 ms. Screenshots, verifier output, and the
+Lighthouse report are under `/work/.evidence/live-repair-3/`.
 
-## Files changed by this review
-
-- `.factory/review-1.md`
-- `.factory/handoff.md`
-- `/work/.evidence/qa-report.md` and `qa-result.json`
-- `/work/.evidence/live/`, `verify-url/`, and `kubectl-harness/` supporting
-  evidence
-
-No product source, site source, tests, deployment, infrastructure, secrets, or
-other service was changed.
-
-## How to repeat
+## Repeat the checks
 
 ```sh
 npm ci
+npm audit --audit-level=high
 npm test
 npm run build
 cargo test --doc
 cargo package --locked --allow-dirty
 ```
 
-Install the staged crate into an empty Cargo root, then run `kpe --help`, the
-README offline example, both `--fail-on` modes, signing, tamper checks, and
-two-key verification. Review `/demo` and a missing route in new desktop and
-phone browser contexts. Run the factory URL verifier, Playwright axe, and
-Lighthouse against the live URL.
+Run a single public claim with, for example:
 
-## Deployment and external state
+```sh
+npm run test:claim -- --grep @claim:signature-trust
+```
 
-The current live artifacts match the implementation candidate. Field Kit sales
-remain honestly paused and no checkout is shown. No deployment is requested by
-this report-only work order.
+Install the staged package into an empty Cargo root and run `kpe --help`,
+`kpe demo`, a signed `kpe report`, and `kpe verify` with matching and different
+trusted keys.
+
+## Deployment and known gaps
+
+The implementation was pushed to `origin/main` and deployed successfully with
+the product's existing static deployment. The custom domain serves the new
+hashed assets and all expected security headers. Root, demo, privacy, and terms
+return 200; a missing URL returns 404.
+
+Field Kit sales remain honestly paused, as before. No checkout or paid mock is
+shown. Publishing the ready Cargo package remains a factory release step; no
+registry credentials were used. There are no known product defects from this
+work order.
