@@ -1,0 +1,1 @@
+Trace Kubernetes RBAC access to every granting binding and rule, then export signed audit evidence.

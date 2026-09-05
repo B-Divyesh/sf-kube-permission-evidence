@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f0e4">
+    <meta name="description" content="Try Kube Permission Evidence with four fictional Kubernetes RBAC checks. No cluster connection is used.">
+    <link rel="canonical" href="https://kube-permission-evidence.sociobot.in/demo/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://kube-permission-evidence.sociobot.in/demo/">
+    <meta property="og:title" content="Demo — Kube Permission Evidence">
+    <meta property="og:description" content="Review a sample Kubernetes RBAC evidence packet without connecting a cluster.">
+    <meta property="og:image" content="https://kube-permission-evidence.sociobot.in/share-card.webp">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Demo — Kube Permission Evidence">
+    <meta name="twitter:description" content="Review a sample Kubernetes RBAC evidence packet without connecting a cluster.">
+    <meta name="twitter:image" content="https://kube-permission-evidence.sociobot.in/share-card.webp">
+    <title>Demo — Kube Permission Evidence</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="stylesheet" href="/src/style.css">
+  </head>
+  <body class="demo-page" data-demo="true">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <div class="demo-banner" role="status">
+      <strong>Demo — sample data, nothing is saved</strong>
+      <div>
+        <button class="quiet-button" id="reset-demo" type="button">Reset demo</button>
+        <a class="button secondary" id="leave-demo" href="/">Start for real</a>
+      </div>
+    </div>
+    <div class="offline-note" id="offline-note" role="status" hidden>
+      You are offline. This bundled sample still works.
+    </div>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Kube Permission Evidence home">
+        <span class="brand-seal" aria-hidden="true">K</span>
+        <span>Kube Permission<br>Evidence</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="/demo/" aria-current="page">Demo</a>
+        <a href="/#how-it-works">How it works</a>
+        <a href="/privacy/">Privacy</a>
+      </nav>
+      <a class="small-cta" href="/#install">Install</a>
+    </header>
+
+    <main id="main" class="demo-main">
+      <section class="demo-intro" aria-labelledby="demo-title">
+        <p class="kicker">Bundled CLI sample</p>
+        <h1 id="demo-title" tabindex="-1">Review a sample Kubernetes access packet</h1>
+        <p>For Kubernetes operators who want to inspect the result before installing the CLI.</p>
+        <dl class="hero-facts">
+          <div><dt>Subject</dt><dd>alice@example.com</dd></div>
+          <div><dt>Checks</dt><dd>4</dd></div>
+          <div><dt>Cluster contact</dt><dd>None</dd></div>
+        </dl>
+      </section>
+
+      <section class="section specimen demo-specimen" aria-labelledby="demo-result-title">
+        <div class="section-heading specimen-heading">
+          <div>
+            <p class="kicker">Populated result</p>
+            <h2 id="demo-result-title">Inspect each access decision</h2>
+          </div>
+          <p>Select a question to see the matching subject, binding, role, and rule.</p>
+        </div>
+        <div class="preview-grid">
+          <div class="workbench">
+            <form class="case-picker" id="case-picker">
+              <label for="case-select">Permission question</label>
+              <select id="case-select" name="case">
+                <option value="secret">Can Alice get secrets in payments?</option>
+                <option value="deploy">Can Alice list deployments in payments?</option>
+                <option value="exec">Can Alice create a pod exec request?</option>
+                <option value="health">Can Alice read the ready endpoint?</option>
+              </select>
+              <button type="button" class="quiet-button" id="clear-proof">Clear result</button>
+            </form>
+            <div class="proof-panel" id="proof-panel" aria-live="polite"></div>
+          </div>
+          <div class="terminal demo-output" aria-label="Output from kpe demo">
+            <div class="terminal-top"><span>KPE DEMO / 0.1.0</span><button class="copy-button" type="button" data-copy="kpe demo" aria-label="Copy demo command">Copy</button></div>
+            <pre tabindex="0"><code><span class="prompt">$</span> kpe demo
+Demo — bundled sample data; no cluster was contacted.
+Subject: user:alice@example.com
+Result: 4 checks — 2 allowed, 2 denied, 0 uncertain.
+Sample files: /tmp/kpe-demo…
+
+evidence.md
+evidence.json
+matrix.json
+rbac-snapshot.json</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="section demo-next" aria-labelledby="demo-next-title">
+        <div>
+          <p class="kicker">Run this sample</p>
+          <h2 id="demo-next-title">Create the same files locally</h2>
+        </div>
+        <div>
+          <pre tabindex="0"><code>cargo install --git https://github.com/B-Divyesh/sf-kube-permission-evidence
+kpe demo</code></pre>
+          <p>The command uses sample files built into the binary. It prints the temporary output directory.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p><span class="brand-seal small" aria-hidden="true">K</span> Kube Permission Evidence</p>
+      <p>Trace Kubernetes RBAC decisions to their granting rules.</p>
+      <nav aria-label="Footer navigation"><a href="/">Home</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="https://github.com/B-Divyesh/sf-kube-permission-evidence">Source (external)</a></nav>
+      <p>Built by Param Factory · version 0.1.0 · build repair-3</p>
+    </footer>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

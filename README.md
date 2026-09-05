@@ -1,43 +1,54 @@
 # Kube Permission Evidence
 
-`kpe` turns Kubernetes RBAC into an auditor-readable, point-in-time proof. It
-collects only Roles, ClusterRoles, RoleBindings, and ClusterRoleBindings,
-evaluates a bounded set of questions for one subject, and emits Markdown plus
-machine-readable JSON showing every rule and binding that grants each access.
+`kpe` creates point-in-time evidence for Kubernetes RBAC access. It is for
+operators preparing audits or reviewing permission changes.
 
-It is for Kubernetes operators preparing an audit or reviewing a permission
-change without mutating the cluster. There is no admission controller, agent,
-telemetry, or hosted cluster connection.
+The CLI collects four RBAC object types, evaluates named access questions, and
+writes every matching binding and rule. It does not change cluster state,
+install an agent, send telemetry, or use a hosted cluster connection.
+
+## Try the bundled sample
+
+The sample uses fictional data built into the binary. It needs no kubeconfig,
+kubectl, or network connection.
+
+```sh
+cargo run -- demo
+```
+
+The command creates a new temporary directory and prints its path. The
+directory contains the sample snapshot, matrix, Markdown packet, and JSON
+packet. Use an explicit new directory when needed:
+
+```sh
+cargo run -- demo --output /tmp/kpe-sample
+```
+
+The browser version is at
+<https://kube-permission-evidence.sociobot.in/demo/>. Its state uses the
+`demo:kpe:` session-storage prefix and never reads or changes real product
+data. See [the demo contract](.factory/demo.md).
 
 ## Install
 
-Build the single Rust binary:
+Build the single Rust binary from this checkout:
 
 ```sh
 cargo install --path .
 kpe --help
 ```
 
-`kpe` is versioned from `0.1.0`. A packaged source release can be inspected
-with `cargo package --allow-dirty` (the factory publishes releases; this
-repository never uses registry credentials).
+The package starts at version `0.1.0`. The factory publishes releases; this
+repository does not use registry credentials.
 
-Live collection needs `kubectl` and a kubeconfig that can only `get` and
-`list` RBAC objects. Offline reports need neither a cluster nor `kubectl`.
+Live collection needs kubectl and read-only RBAC access. Offline reports need
+neither kubectl nor a cluster.
 
-Try the complete offline path immediately after cloning:
+## Create an evidence packet
 
-```sh
-cargo run -- report --snapshot examples/rbac-snapshot.json \
-  --subject user:alice@example.com --as-group platform-engineers \
-  --matrix examples/matrix.json --output /tmp/kpe-example
-```
+### 1. Write bounded questions
 
-## Usage
-
-### 1. Write the questions you need to prove
-
-`matrix.json`:
+Create `matrix.json`:
 
 ```json
 {
@@ -49,21 +60,27 @@ cargo run -- report --snapshot examples/rbac-snapshot.json \
 }
 ```
 
-Every field is explicit. For a named `get`, `update`, `patch`, `delete`, or
-subresource request, add `"resourceName":"api-key"`. A `list` or `watch`
-constrained by a rule's `resourceNames` must also include the field selector
-sent by the client, for example:
+Unknown matrix fields are rejected. This prevents a misspelling from changing
+the access question.
+
+For named `get`, `update`, `patch`, `delete`, or subresource requests, add
+`"resourceName":"api-key"`. A named `list` or `watch` check also needs the
+field selector sent by the client:
 
 ```json
 {"verb":"list", "resource":"secrets", "namespace":"payments", "resourceName":"api-key", "fieldSelector":"metadata.name=api-key"}
 ```
 
-Kubernetes cannot restrict top-level `create` or `deletecollection` requests by
-name, so `resourceNames` rules never grant those checks. For a non-resource
-endpoint, use `{"verb":"get","nonResourceURL":"/healthz"}` instead of
-resource fields.
+Kubernetes cannot restrict top-level `create` or `deletecollection` requests
+by name. A `resourceNames` rule does not grant those checks.
 
-### 2. Create the evidence packet
+For a non-resource endpoint, use this shape:
+
+```json
+{"verb":"get", "nonResourceURL":"/healthz/ready"}
+```
+
+### 2. Collect and evaluate
 
 ```sh
 kpe report \
@@ -74,112 +91,150 @@ kpe report \
 ```
 
 This writes `evidence.md` and `evidence.json`. `--subject` accepts
-`user:<name>`, `group:<name>`, or `serviceaccount:<namespace>:<name>`.
-Known Kubernetes groups for service accounts are derived automatically;
-supplement user identity-provider groups with repeated `--as-group` options.
+`user:<name>`, `group:<name>`, or
+`serviceaccount:<namespace>:<name>`. Standard Kubernetes service-account
+groups are derived automatically. Add external identity-provider groups with
+repeated `--as-group` options.
 
-By default, `kpe` uses the current kubectl context. Pin one if needed:
+The report exits `0` after a completed evaluation. Input, collection, and
+output errors exit `1`. `--fail-on denied` or `--fail-on allowed` exits `3`
+when the selected result occurs.
 
-```sh
-kpe report --subject serviceaccount:payments:reconciler \
-  --matrix matrix.json --context audit-readonly --output reconciler-access
-```
+Use `--json` to send the complete JSON packet to stdout without creating
+files. Diagnostics remain on stderr.
 
-The report exits `0` when evaluation completed, whether an individual check is
-allowed or denied. Collection, input, and output failures exit non-zero. Add
-`--fail-on denied` to make any denied check exit `3`, or `--fail-on allowed`
-to flag unexpected grants in CI.
-
-### 3. Collect once, evaluate offline
+### 3. Collect once and report offline
 
 ```sh
 kpe snapshot --output rbac-snapshot.json --context audit-readonly
-kpe report --snapshot rbac-snapshot.json --subject user:alice@example.com \
-  --as-group platform-engineers --matrix matrix.json --output evidence
+kpe report --snapshot rbac-snapshot.json \
+  --subject user:alice@example.com \
+  --as-group platform-engineers \
+  --matrix matrix.json \
+  --output evidence
 ```
 
-The snapshot contains RBAC objects and collection metadata, never kubeconfig
-credentials or bearer tokens.
+Snapshots contain RBAC objects and collection metadata. They do not contain
+kubeconfig credentials or bearer tokens.
 
-### 4. Sign and verify a packet
+### 4. Sign and verify with a trusted signer
 
 ```sh
-kpe keygen --output audit-signing.key
-kpe report --snapshot rbac-snapshot.json --subject user:alice@example.com \
-  --matrix matrix.json --output evidence --signing-key audit-signing.key
-kpe verify evidence.json
+kpe keygen \
+  --output audit-signing.key \
+  --public-key-output audit-signing.pub
+
+kpe report --snapshot rbac-snapshot.json \
+  --subject user:alice@example.com \
+  --matrix matrix.json \
+  --output evidence \
+  --signing-key audit-signing.key
+
+kpe verify evidence.json --trusted-public-key audit-signing.pub
 ```
 
-`keygen` writes a local Ed25519 seed with owner-only permissions on Unix. The
-JSON packet embeds its public key, signature, and SHA-256 content digest;
-`verify` recomputes all three without cluster access. Protect the key like any
-other audit signing credential and never commit it.
-
-### JSON output for scripts
-
-`kpe report ... --json` writes the complete JSON report to stdout and does not
-write files. Diagnostics go to stderr. `kpe snapshot --json` likewise streams
-the snapshot.
-
-## What the evaluator covers
-
-- RoleBinding→Role and RoleBinding→ClusterRole grants, constrained to the
-  binding namespace.
-- ClusterRoleBinding→ClusterRole grants across namespaces.
-- Exact and wildcard verbs, API groups, resources, and non-resource URLs,
-  including Kubernetes' `*/subresource` form such as `*/scale`.
-- Subresources (`pods/exec`) and verb-correct `resourceNames` constraints,
-  including explicit `metadata.name` selectors for named `list`/`watch`.
-- Direct User, Group, and ServiceAccount subjects, including Kubernetes'
-  standard service-account groups.
-- Every granting path, not only the first match.
-
-ClusterRoles with `aggregationRule` are evaluated from the controller-resolved
-`rules` returned by the API and every affected proof is marked **uncertain**.
-The report records Kubernetes server version and explains this version-sensitive
-behavior. Impersonation, webhook authorizers, Node authorizers, and external
-identity-provider group expansion are outside an RBAC snapshot, so `kpe` does
-not claim to model them.
-
-## Required read-only Kubernetes access
-
-The collector runs only these calls:
+`keygen` creates an owner-only private key on Unix and refuses to overwrite an
+existing file. Deliver `audit-signing.pub` to the auditor through a separate,
+trusted channel. The command also prints its SHA-256 fingerprint, which can be
+checked directly:
 
 ```sh
+kpe verify evidence.json \
+  --trusted-fingerprint SHA256:<64-hex-character-fingerprint>
+```
+
+Verification checks the content digest, Ed25519 signature, strict packet
+schema, and the optional trusted signer. It prints the
+packet signer fingerprint. A different trusted key or any added packet field
+causes a nonzero result.
+
+Without a trust option, verification reports content integrity only and says
+that signer trust was not checked.
+
+## RBAC behavior covered
+
+- RoleBinding to Role grants.
+- RoleBinding to ClusterRole grants within the binding namespace.
+- ClusterRoleBinding to ClusterRole grants across namespaces.
+- Exact and wildcard verbs, API groups, resources, and non-resource URLs.
+- Exact subresources and Kubernetes `*/subresource` rules.
+- Verb-correct `resourceNames` and named list or watch field selectors.
+- User, Group, and ServiceAccount subjects.
+- Every matching grant path, rather than only the first.
+
+Aggregated ClusterRole rules come from the controller-resolved API response.
+Each affected result is marked uncertain, and the packet records the
+Kubernetes server version.
+
+Webhook authorizers, Node authorizers, impersonation, and unsupplied external
+group membership remain outside the snapshot. These limits are written into
+every packet.
+
+## Read-only collection boundary
+
+The collector can invoke these commands. Cluster calls append context and
+kubeconfig flags when supplied. The client-version call does not need them.
+
+```sh
+kubectl version --client -o json
 kubectl get roles --all-namespaces -o json
 kubectl get rolebindings --all-namespaces -o json
 kubectl get clusterroles -o json
 kubectl get clusterrolebindings -o json
+kubectl config current-context
 kubectl version -o json
 ```
 
-Use a dedicated audit identity. `kpe` never invokes create, patch, apply,
-delete, exec, or an authorization mutation.
+`kubectl config current-context` runs only when `--context` is omitted. The
+collector never invokes create, apply, patch, replace, delete, edit, or exec.
 
-## Development
+## Privacy and payment state
+
+The CLI has no network client and sends no telemetry. The static site uses no
+analytics, trackers, CDN fonts, or third-party scripts. Its guide and demo work
+offline after the first visit.
+
+Existing Field Kit licenses are stored in browser local storage and verified
+through the Sociobot API at most once daily. License return URLs are excluded
+from Cache Storage. Field Kit sales are paused, and no payment action is
+available.
+
+See the live [privacy policy](https://kube-permission-evidence.sociobot.in/privacy/)
+and [terms](https://kube-permission-evidence.sociobot.in/terms/).
+
+## Development and verification
 
 ```sh
-npm install
+npm ci
 npm test
-npm run build         # Rust release binary + site at dist/site/
-npm run build:site    # static site only at dist/site/
-npm run typecheck
-npm run lint
-cargo package --allow-dirty
+npm run build
+cargo test --doc
+cargo package --locked --allow-dirty
 ```
 
-The static documentation uses Vite and vanilla TypeScript. It has no runtime
-CDNs, tracking, or uploaded cluster data. The license form stores only the
-license token and a token-bound daily verification verdict in local browser
-storage. Field Kit sales remain paused until the hosted checkout and every
-promised release asset are available; the free CLI is complete and unaffected.
+`npm test` runs TypeScript, formatting, Clippy, Rust behavior, all 34 declared
+claim checks, browser flows, accessibility checks, privacy checks, and offline
+checks. Every public claim and its isolated command is listed in
+[`.factory/claims.json`](.factory/claims.json).
+
+`npm run build` creates the release binary at `target/release/kpe` and the
+static site at `dist/site/`. To exercise the installable artifact, unpack the
+crate and install it into a clean Cargo root:
+
+```sh
+cargo package --locked --allow-dirty
+cargo install --locked \
+  --path target/package/kube-permission-evidence-0.1.0 \
+  --root /tmp/kpe-consumer
+```
 
 ## Deployment
 
 The factory deploys `dist/site/` to
-<https://kube-permission-evidence.sociobot.in>. It owns DNS, billing product
-registration, binary release publishing, and registry credentials.
+<https://kube-permission-evidence.sociobot.in>. It owns DNS, release
+publishing, and billing registration.
 
 ## License
 
-MIT. See [LICENSE](LICENSE). Changes are recorded in [CHANGELOG.md](CHANGELOG.md).
+MIT. See [LICENSE](LICENSE). Changes are recorded in
+[CHANGELOG.md](CHANGELOG.md).

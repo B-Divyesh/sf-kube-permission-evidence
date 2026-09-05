@@ -79,6 +79,10 @@ instant; hierarchy, borders, and labels preserve every state without motion.
   subject→binding→role→resource chain. No text, logos, people, or third-party
   assets. Generation metadata and the exact prompt are retained as provenance;
   the shipped WebP is optimised below 300 KB.
+- `site/public/share-card.webp`: deterministic 1200×630 center crop of the
+  original specimen map. Created locally with ImageMagick; no new source art.
+- `site/public/apple-touch-icon.png`: deterministic 180×180 crop of the
+  original fern. Created locally with ImageMagick; no new source art.
 - Seal, arrows, and UI glyphs are hand-made with CSS or inline SVG primitives;
   no icon library is used.
 

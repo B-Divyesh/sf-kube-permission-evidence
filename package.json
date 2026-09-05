@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "cargo fmt --all -- --check && cargo clippy --all-targets -- -D warnings",
     "test:site": "npm run build:site && playwright test",
+    "test:claim": "cargo build --quiet && npm run build:site && playwright test tests/site/claims.spec.ts",
     "test": "npm run typecheck && npm run lint && cargo test --all-targets && npm run test:site"
   },
   "devDependencies": {

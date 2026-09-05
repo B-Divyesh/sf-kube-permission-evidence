@@ -1,0 +1,6 @@
+{"version":2,"width":80,"height":12,"timestamp":1788566400,"env":{"SHELL":"kpe demo","TERM":"xterm-256color"}}
+[0.08,"o","$ kpe demo\r\n"]
+[0.24,"o","Demo — bundled sample data; no cluster was contacted.\r\n"]
+[0.40,"o","Subject: user:alice@example.com\r\n"]
+[0.56,"o","Result: 4 checks — 2 allowed, 2 denied, 0 uncertain.\r\n"]
+[0.72,"o","Sample files: /tmp/kpe-demo…\r\n"]

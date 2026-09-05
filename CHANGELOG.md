@@ -3,6 +3,24 @@
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/) and
 this project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- Reject unknown fields at every signed evidence boundary and in access
+  matrices.
+- Verify packets against a separately delivered public key or signer
+  fingerprint.
+- Document every read-only kubectl command used during collection.
+- Add complete route metadata, shared navigation and footers, and a real 404
+  response configuration.
+
+### Added
+
+- Add `kpe demo` with bundled input and isolated temporary output.
+- Add a one-click browser demo with reset and exit controls.
+- Add one outcome-based regression test for each declared public claim.
+
 ## [0.1.0] - 2026-08-28
 
 ### Fixed
