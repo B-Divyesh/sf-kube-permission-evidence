@@ -67,7 +67,9 @@ scrollable. All targets are at least 44 px.
 ## Motion policy
 
 Initial specimen parts enter once from their physical origin (4–10 px upward,
-180–280 ms). State changes use opacity and a short transform. Nothing loops.
+180–280 ms). Readable copy stays fully opaque while it moves. State changes
+use opacity and a short transform only when the content remains readable.
+Nothing loops.
 With `prefers-reduced-motion: reduce`, transitions and smooth scrolling become
 instant; hierarchy, borders, and labels preserve every state without motion.
 

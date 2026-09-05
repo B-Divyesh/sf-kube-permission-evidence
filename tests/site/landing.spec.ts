@@ -28,6 +28,22 @@ test('landing page states the job, audience, and sample action first', async ({ 
   expect(errors).toEqual([]);
 });
 
+test('first-screen copy keeps accessible contrast during default-motion entrance', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/');
+  const opacity = await page.locator('.hero-copy').evaluate((hero) => {
+    const animation = hero.getAnimations().at(0);
+    if (!animation) throw new Error('expected the default hero entrance animation');
+    animation.pause();
+    animation.currentTime = 200;
+    return getComputedStyle(hero).opacity;
+  });
+  expect(opacity).toBe('1');
+
+  const results = await new AxeBuilder({ page }).analyze();
+  expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([]);
+});
+
 test('one click opens a populated isolated demo with reset and exit', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => localStorage.setItem('sb_license:kube-permission-evidence', 'real-license'));

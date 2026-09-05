@@ -416,3 +416,56 @@ fn wildcard_subresource_rules_follow_kubernetes_resource_matching() {
     assert_eq!(report.summary.denied, 2);
     assert_eq!(report.checks[0].grants[0].rule.resources, vec!["*/scale"]);
 }
+
+#[test]
+fn rolebindings_never_grant_non_resource_urls() {
+    let snapshot = Snapshot {
+        schema_version: "kpe.snapshot/v1".into(),
+        collected_at: "2026-09-05T00:00:00Z".into(),
+        collector_version: "test".into(),
+        context: "non-resource-rolebinding-regression".into(),
+        server_version: "v1.33.4".into(),
+        roles: vec![],
+        cluster_roles: vec![Role {
+            kind: "ClusterRole".into(),
+            metadata: metadata("health-reader", None),
+            rules: vec![PolicyRule {
+                verbs: vec!["get".into()],
+                non_resource_urls: vec!["/healthz/*".into()],
+                ..Default::default()
+            }],
+            aggregation_rule: None,
+        }],
+        role_bindings: vec![binding(
+            "RoleBinding",
+            "payments-health",
+            Some("payments"),
+            vec![subject("User", "alice", None)],
+            "ClusterRole",
+            "health-reader",
+        )],
+        cluster_role_bindings: vec![],
+    };
+    let request = AccessCheck {
+        verb: "get".into(),
+        api_group: "".into(),
+        resource: None,
+        subresource: None,
+        namespace: Some("payments".into()),
+        resource_name: None,
+        field_selector: None,
+        non_resource_url: Some("/healthz/ready".into()),
+    };
+
+    let report = evaluate(
+        &snapshot,
+        &parse_subject("user:alice").unwrap(),
+        &[],
+        &AccessMatrix {
+            checks: vec![request],
+        },
+    );
+
+    assert!(!report.checks[0].allowed);
+    assert!(report.checks[0].grants.is_empty());
+}

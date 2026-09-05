@@ -7,6 +7,9 @@ this project uses [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Reject resource-only fields on non-resource URL checks and prevent
+  RoleBindings from granting non-resource URLs.
+- Keep first-screen copy fully opaque throughout its entrance motion.
 - Reject unknown fields at every signed evidence boundary and in access
   matrices.
 - Verify packets against a separately delivered public key or signer

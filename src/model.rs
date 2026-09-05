@@ -125,9 +125,29 @@ impl AccessCheck {
         if self.verb.trim().is_empty() {
             return Err("verb must not be empty".into());
         }
+        if let Some(url) = &self.non_resource_url {
+            if self.resource.is_some() {
+                return Err("set resource or nonResourceURL, not both".into());
+            }
+            if !url.starts_with('/') {
+                return Err("nonResourceURL must start with /".into());
+            }
+            if !self.api_group.is_empty()
+                || self.subresource.is_some()
+                || self.namespace.is_some()
+                || self.resource_name.is_some()
+                || self.field_selector.is_some()
+            {
+                return Err(
+                    "nonResourceURL checks cannot set apiGroup, subresource, namespace, resourceName, or fieldSelector"
+                        .into(),
+                );
+            }
+            return Ok(());
+        }
         match (&self.resource, &self.non_resource_url) {
-            (Some(_), Some(_)) => Err("set resource or nonResourceURL, not both".into()),
             (None, None) => Err("set resource or nonResourceURL".into()),
+            (Some(_), Some(_)) => unreachable!("non-resource checks return above"),
             _ if self.subresource.is_some() && self.resource.is_none() => {
                 Err("subresource requires resource".into())
             }

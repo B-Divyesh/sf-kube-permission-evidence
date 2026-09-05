@@ -80,6 +80,10 @@ For a non-resource endpoint, use this shape:
 {"verb":"get", "nonResourceURL":"/healthz/ready"}
 ```
 
+Non-resource questions cannot include `apiGroup`, `namespace`, `subresource`,
+`resourceName`, or `fieldSelector`. Kubernetes applies non-resource URL rules
+only through a ClusterRoleBinding; a RoleBinding never grants one.
+
 ### 2. Collect and evaluate
 
 ```sh

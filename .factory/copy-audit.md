@@ -60,7 +60,7 @@ as one word. Every sentence is at or below 22 words. No banned word appears.
 | Stored in this browser and sent only to Sociobot for verification. | 11 |
 | Downloads remain paused until the complete release is published. | 9 |
 | Trace Kubernetes RBAC decisions to their granting rules. | 8 |
-| Built by Param Factory · version 0.1.0 · build repair-3 | 8 |
+| Built by Param Factory · version 0.1.0 · build repair-4 | 8 |
 
 ## Terminology
 

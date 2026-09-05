@@ -14,7 +14,22 @@ function temporaryDirectory(label: string): string {
 }
 
 function runCli(args: string[], cwd = temporaryDirectory('run'), env: NodeJS.ProcessEnv = process.env): RunResult {
-  return spawnSync(cli, args, { cwd, env, encoding: 'utf8' });
+  return runBinary(cli, args, cwd, env);
+}
+
+function runBinary(binary: string, args: string[], cwd = temporaryDirectory('run'), env: NodeJS.ProcessEnv = process.env): RunResult {
+  return spawnSync(binary, args, { cwd, env, encoding: 'utf8' });
+}
+
+function installPackagedCli(): string {
+  const packaged = spawnSync('cargo', ['package', '--locked', '--allow-dirty'], { cwd: resolve('.'), encoding: 'utf8' });
+  if (packaged.status !== 0) throw new Error(`cargo package failed:\n${packaged.stdout}\n${packaged.stderr}`);
+
+  const root = temporaryDirectory('consumer');
+  const stagedPackage = resolve('target/package/kube-permission-evidence-0.1.0');
+  const installed = spawnSync('cargo', ['install', '--locked', '--path', stagedPackage, '--root', root], { cwd: root, encoding: 'utf8' });
+  if (installed.status !== 0) throw new Error(`cargo install failed:\n${installed.stdout}\n${installed.stderr}`);
+  return join(root, 'bin', 'kpe');
 }
 
 function runDemo(): { directory: string; result: RunResult; report: Record<string, any> } {
@@ -300,16 +315,47 @@ test('@claim:resource-name-semantics follows create and named list rules', () =>
   expect(report.checks.map((check: any) => check.allowed)).toEqual([false, false, true, true]);
 });
 
-test('@claim:non-resource-url matches exact and trailing-wildcard URL rules', () => {
+test('@claim:non-resource-url matches exact and trailing-wildcard URL rules without accepting a RoleBinding grant', () => {
   const snapshot = baseSnapshot();
   snapshot.clusterRoles = [{ kind: 'ClusterRole', metadata: { name: 'health' }, rules: [{ nonResourceURLs: ['/healthz/*'], verbs: ['get'] }] }];
   snapshot.clusterRoleBindings = [{ kind: 'ClusterRoleBinding', metadata: { name: 'health' }, subjects: [{ kind: 'User', name: 'alice@example.com' }], roleRef: { kind: 'ClusterRole', name: 'health' } }];
-  snapshot.roleBindings = [];
+  snapshot.roleBindings = [{
+    kind: 'RoleBinding', metadata: { name: 'payments-health', namespace: 'payments' },
+    subjects: [{ kind: 'User', name: 'alice@example.com' }],
+    roleRef: { kind: 'ClusterRole', name: 'health' },
+  }];
   const { report } = evaluateSnapshot(snapshot, [
     { verb: 'get', nonResourceURL: '/healthz/ready' },
     { verb: 'get', nonResourceURL: '/version' },
   ]);
   expect(report.checks.map((check: any) => check.allowed)).toEqual([true, false]);
+
+  const packagedCli = installPackagedCli();
+  const directory = temporaryDirectory('non-resource-package');
+  const snapshotPath = join(directory, 'snapshot.json');
+  const matrixPath = join(directory, 'matrix.json');
+  writeFileSync(snapshotPath, JSON.stringify(snapshot));
+  writeFileSync(matrixPath, JSON.stringify({ checks: [{ verb: 'get', nonResourceURL: '/healthz/ready' }] }));
+  const allowed = runBinary(packagedCli, [
+    'report', '--snapshot', snapshotPath, '--subject', 'user:alice@example.com', '--matrix', matrixPath, '--json',
+  ], directory);
+  expect(allowed.status).toBe(0);
+  expect(JSON.parse(allowed.stdout).checks[0].allowed).toBe(true);
+
+  snapshot.clusterRoleBindings = [];
+  writeFileSync(snapshotPath, JSON.stringify(snapshot));
+  const roleBindingOnly = runBinary(packagedCli, [
+    'report', '--snapshot', snapshotPath, '--subject', 'user:alice@example.com', '--matrix', matrixPath, '--json',
+  ], directory);
+  expect(roleBindingOnly.status).toBe(0);
+  expect(JSON.parse(roleBindingOnly.stdout).checks[0].allowed).toBe(false);
+
+  writeFileSync(matrixPath, JSON.stringify({ checks: [{ verb: 'get', nonResourceURL: '/healthz/ready', namespace: 'payments' }] }));
+  const invalid = runBinary(packagedCli, [
+    'report', '--snapshot', snapshotPath, '--subject', 'user:alice@example.com', '--matrix', matrixPath, '--json',
+  ], directory);
+  expect(invalid.status).toBe(1);
+  expect(invalid.stderr).toContain('nonResourceURL checks cannot set');
 });
 
 test('@claim:aggregation-uncertain marks grants from aggregated ClusterRoles uncertain', () => {

@@ -154,6 +154,13 @@ fn evaluate_bindings(
     grants: &mut Vec<GrantProof>,
 ) {
     for binding in bindings {
+        // Non-resource URLs have no namespace. Kubernetes only applies those
+        // rules through a ClusterRoleBinding, never through a RoleBinding.
+        // Keep this guard here as well as matrix validation because callers of
+        // the public evaluator can construct AccessCheck values directly.
+        if !cluster_binding && request.non_resource_url.is_some() {
+            continue;
+        }
         if !cluster_binding && request.namespace.as_deref() != binding.metadata.namespace.as_deref()
         {
             continue;

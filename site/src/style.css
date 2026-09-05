@@ -46,7 +46,7 @@ button, select, input, a { -webkit-tap-highlight-color: transparent; }
 .small-cta { justify-self: end; min-height: 44px; display: inline-flex; align-items: center; color: var(--moss); font-size: 14px; font-weight: 700; }
 
 .hero { min-height: 720px; padding: clamp(64px, 9vw, 128px) clamp(20px, 5vw, 72px) 72px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(460px, 7fr); gap: clamp(40px, 7vw, 112px); align-items: center; overflow: hidden; }
-.hero-copy { position: relative; z-index: 2; animation: rise .5s ease-out both; }
+.hero-copy { position: relative; z-index: 2; animation: rise .28s ease-out both; }
 .kicker { margin: 0 0 24px; color: var(--clay); font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .kicker span { margin-right: 12px; color: var(--muted); }
 h1, h2, h3 { margin-top: 0; font-family: var(--serif); color: var(--moss); line-height: 1.02; text-wrap: balance; }
@@ -69,7 +69,7 @@ h3 { margin-bottom: 12px; font-size: 24px; }
 .hero-facts div:last-child { border: 0; }
 .hero-facts dt { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .hero-facts dd { margin: 2px 0 0; font-family: var(--serif); font-size: 20px; font-weight: 700; }
-.hero-plate { min-width: 720px; margin: 0 -15vw 0 -12vw; animation: reveal .7s .08s ease-out both; }
+.hero-plate { min-width: 720px; margin: 0 -15vw 0 -12vw; animation: reveal .28s .08s ease-out both; }
 .hero-plate img { width: 100%; height: auto; display: block; mix-blend-mode: multiply; }
 .hero-plate figcaption { margin-top: -36px; padding-left: 28%; color: var(--muted); font-size: 12px; }
 .hero-plate figcaption span { margin-right: 12px; color: var(--clay); font-weight: 800; }
@@ -189,7 +189,7 @@ footer nav a, .legal-note a, .install-copy > p a, .legal-main a, .limit-copy a {
 .demo-next > div { min-width: 0; }
 .demo-next pre { max-width: 100%; padding: 20px; overflow-x: auto; color: #eef4eb; background: var(--ink); }
 
-@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes rise { from { transform: translateY(10px); } to { transform: translateY(0); } }
 @keyframes reveal { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
 @media (max-width: 900px) {
