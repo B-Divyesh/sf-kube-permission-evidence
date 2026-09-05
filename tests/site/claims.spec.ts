@@ -408,6 +408,7 @@ test('@claim:offline-site reloads the guide and sample while offline', async ({ 
   await page.goto('/');
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
+  await page.reload();
   await context.setOffline(true);
   await page.reload();
   await expect(page.getByText('You are offline.')).toBeVisible();
