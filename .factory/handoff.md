@@ -1,3 +1,30 @@
+# Verification 5 handoff — PASS
+
+## Latest independent verification
+
+Implementation reviewed: `a223caf74e6945d367ed361c9cc58fa42a24934d`.
+Documentation reviewed before this report: `66196611ffdb92af351dcee6b03599c90a60908e`.
+
+Independent QA passed with **0 findings** and **0 untested public claims**.
+The verifier used a detached clean worktree, ran `npm ci`, `npm audit`,
+`npm test`, `npm run build`, `cargo test --doc`, `cargo package`, a clean
+packaged install, and all 34 individual claim commands. The installed `kpe`
+binary completed its offline bundled demo with 2 allowed and 2 denied checks.
+
+Fresh live desktop and phone checks confirmed the job, audience, and sample
+action before scrolling; the isolated browser demo; reset and start-for-real
+behavior; legal routes; designed 404; keyboard, reduced motion, offline reload,
+privacy requests, headers, links, and route titles. Axe found zero serious or
+critical issues on all public routes. A live default-motion probe at 200 ms
+confirmed hero text opacity remains 1. Lighthouse mobile measured
+100/100/100/100 with LCP 1.4 s, TBT 30 ms, and CLS 0. The 16 deployable public
+files match a fresh `a223caf` build byte-for-byte.
+
+See `.factory/verification-5.md` for the full record. There are no product
+findings or untested claims. Backend-only checks do not apply because the
+product is a static site plus local CLI; publishing, deployment, DNS, and
+billing remain factory-owned.
+
 # Repair 4 handoff — PASS
 
 ## Result
