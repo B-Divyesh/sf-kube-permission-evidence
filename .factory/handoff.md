@@ -1,69 +1,99 @@
-# Review 2 handoff — FAIL
+# Repair 4 handoff — PASS
 
 ## Result
 
-Work order `kube-permission-evidence-review-2` reviewed implementation
-`98eb121448edd957f8494df9577b7c47dcbc158b` and documentation head
-`972d249d8519dd83e6a82a45709f2811ebf99184`.
+Implementation commit: `a223caf74e6945d367ed361c9cc58fa42a24934d`.
+This is the deployed product implementation. The documentation-only commit
+containing this handoff follows it and does not change deployed artifacts.
 
-**FAIL — 2 findings and 0 untested claims.** Product code was not changed.
+The two findings in review 2 are resolved.
 
-1. High: a namespaced non-resource URL question can be falsely granted by a
-   RoleBinding to a ClusterRole.
-2. Medium: the default first-screen opacity animation temporarily lowers text
-   contrast below WCAG AA and makes `npm test` timing-dependent.
+1. **RoleBinding non-resource false grant:** matrix validation now rejects
+   `apiGroup`, `namespace`, `subresource`, `resourceName`, and
+   `fieldSelector` on a non-resource URL question. The evaluator independently
+   ignores non-resource URL rules from every RoleBinding, including for
+   callers using the public library API directly.
+2. **Hero contrast and test flakiness:** first-screen copy now stays fully
+   opaque throughout its 280 ms transform-only entrance. A default-motion axe
+   check pauses the live animation at 200 ms and confirms no serious or
+   critical contrast issue.
 
-See `.factory/review-2.md` for reproduction details and full evidence.
+The `non-resource-url` claim now installs the freshly packaged CLI into a
+clean consumer root. It proves a ClusterRoleBinding URL grant, a denied
+RoleBinding-only URL rule, and rejection of the prior namespaced input.
 
-## What was reviewed
+## Verification
 
-- Read the brief, visual thesis, demo contract, copy audit, 34-claim manifest,
-  all earlier review and verification reports, README, and implementation.
-- Opened the live site in fresh desktop and phone contexts before scrolling.
-- Exercised the one-click populated sample, persistent label, allowed and
-  denied output, reset, Start for real, and real-storage isolation.
-- Checked keyboard operation, focus, mobile targets, 200% text, reduced
-  motion, accessibility, privacy requests, offline reload, links, metadata,
-  legal pages, and the designed HTTP 404.
-- Compared all 22 public generated files with a fresh candidate build.
-- Built and packaged a clean detached checkout and installed the crate into a
-  new consumer root.
-- Ran all 34 declared claim commands separately. All passed; F-01 shows the
-  `non-resource-url` sandbox is incomplete.
-
-## Verification summary
+All commands below passed in detached clean worktree
+`/tmp/kpe-clean-751F5E` at the implementation commit.
 
 ```text
-npm ci                                      PASS
+npm ci                                      PASS — 24 packages
 npm audit --audit-level=high                PASS — 0 vulnerabilities
-npm test                                    FAIL — first-screen contrast timing
-npm run build                               PASS
-cargo test --doc                            PASS — 1
-cargo package --locked --allow-dirty        PASS — 25 files
-34 individual claim commands                PASS — 34/34
+npm test                                    PASS — typecheck, format, Clippy,
+                                               19 Rust tests and 48 browser tests
+34 individual claims commands               PASS — 34/34
+npm run build                               PASS — release CLI and dist/site
+cargo test --doc                            PASS — 1 doctest
+cargo package --locked --allow-dirty        PASS
 clean packaged cargo install                PASS — kpe 0.1.0
-installed normal/invalid/recovery paths      PASS
-installed namespaced non-resource case      FAIL — false allowed result
-factory verify-url                           PASS
-live generated artifact comparison           PASS — 22/22
-live Lighthouse                              100/100/100/100
 ```
 
-Live Lighthouse measured FCP 1.0 s, LCP 1.4 s, TBT 60 ms, and CLS 0. Built
-payloads are 7.4 KiB JavaScript, 16.7 KiB CSS, and a 93.3 KiB hero image.
+The installed consumer binary completed the bundled demo (2 allowed, 2
+denied), made the documented offline report, rejected the invalid namespaced
+non-resource URL matrix, emitted a valid 0/0/0 packet for an empty matrix,
+and returned the documented recovery error when `kubectl` was unavailable.
 
-Evidence is stored under `/work/.evidence/review2/`.
+## Deployed HTTPS check
 
-## Required next steps
+The static site was deployed with the factory static workflow from the clean
+`dist/site` directory. The existing static app, custom domain, response
+headers, and one-site static architecture were retained.
 
-1. Reject `namespace` and other resource-only fields on non-resource URL
-   questions, and prevent RoleBindings from granting non-resource URLs. Add a
-   packaged-CLI regression to the `non-resource-url` claim.
-2. Keep first-screen text fully opaque during entrance motion. Add a default-
-   motion axe check while the animation is in progress.
-3. Rerun `npm test`, every declared claim command, the installed package, and
-   the live review after deployment.
+- Live HTTPS root, demo, privacy, and terms pages return 200; an unknown path
+  returns the designed page with HTTP 404.
+- Fresh 1440×900 and 390×844 contexts show the job, Kubernetes-operator
+  audience, and **Try it with sample data** before scrolling. The action sits
+  at 666 px on desktop and 514 px on phone.
+- The one-click demo shows its persistent sample-data label, realistic allowed
+  output, a denied sample, Reset demo, Start for real, and leaves a real
+  storage sentinel unchanged. It reloads and changes checks offline after
+  service-worker control.
+- Live axe found no serious or critical issue on root during default motion,
+  demo, privacy, terms, or the 404 page. Console and page errors were empty.
+  Keyboard, focus, mobile overflow, reduced motion, legal pages, titles,
+  metadata, and same-origin links passed their browser checks.
+- The clean build and live deployment match for all 22 public files. The
+  private deployment configuration URL intentionally returns a rewritten 404
+  and is not counted as a public asset.
+- Headers include CSP with response-header `frame-ancestors`, HSTS, `nosniff`,
+  strict referrer policy, permissions policy, immutable hashed assets, and a
+  no-store service worker.
+- Lighthouse mobile: Performance 100, Accessibility 100, Best Practices 100,
+  SEO 100; FCP 1.0 s, LCP 1.4 s, TBT 40 ms, CLS 0.
 
-Cargo registry publication and Field Kit sales remain paused factory tasks.
-The product has no backend, so tenant isolation, restart persistence, health,
-and 429 checks do not apply.
+Evidence is in `/work/.evidence/kpe-repair-4/`, including separate logs for
+each clean claim command, installed-consumer outputs, clean/live build hashes,
+desktop and phone screenshots, browser assertions, headers, and Lighthouse.
+The catalog description is copied to `/work/.evidence/catalog-description.txt`
+and is a 99-character verb-first sentence.
+
+## Earlier findings
+
+All earlier review and verification findings were rechecked as covered by the
+clean test suite and claims: `resourceNames` semantics, `*/subresource`,
+strict signed-packet parsing, trusted signer matching, unknown matrix fields,
+CLI and browser demos, offline/service-worker behavior, license storage,
+metadata and designed 404 handling, response headers, mobile targets, and
+collector command documentation.
+
+## Remaining external state
+
+This product has no backend, tenant store, health endpoint, or rate-limited
+product API. Backend-only tenant isolation, restart persistence, and 429
+checks do not apply.
+
+The free CLI is complete. Field Kit sales remain publicly marked as paused;
+the site has no checkout or payment control. Billing registration and cargo
+registry publication remain factory-owned dependencies, so no billing offer
+metadata is emitted for an unavailable offer.
