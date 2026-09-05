@@ -1,68 +1,93 @@
-# Verification handoff — FAIL
+# Review 1 handoff — FAIL
 
 ## Result
 
-Independent verification work order `kube-permission-evidence-verify-3` is
-**FAIL** for candidate `a230073f5b654fd3ad2251eb497f99f613f73185` at
-<https://kube-permission-evidence.sociobot.in/>.
+Review work order `kube-permission-evidence-review-1` is **FAIL** for live
+implementation `aed9592164633ab4ef8f7ab9e5da082368f4ac7e` at
+<https://kube-permission-evidence.sociobot.in/>. The documentation head entering
+the review was `3c058becd13b80c2d105ed8b89df73414af521ea`; later commits after the
+implementation contain reports only.
 
-The deployment is current and all repository, build, package, CLI workflow,
-browser, accessibility, privacy, PWA, response-policy, and performance gates
-passed. Two high-severity signed-evidence defects remain:
+The full evidence is in `.factory/review-1.md`. The result is 10 findings
+(5 high, 5 medium) and 34 public claim groups without declared claim tests.
 
-1. unrecognized report/check/grant/signature JSON fields can be added while the
-   installed `kpe verify` still exits 0 and reports the packet valid; and
-2. `kpe verify` always trusts the public key inside the packet and cannot
-   require an auditor-approved key or fingerprint.
+## Main open work
 
-Full reproductions and evidence are in `.factory/verification-3.md`.
+- Reject unauthenticated unknown fields in signed packets.
+- Let auditors require an expected signer key or fingerprint.
+- Reject unknown access-matrix fields instead of silently changing a question.
+- Add the required CLI sample demo, `/demo` state, persistent sample label,
+  reset, exit action, and `.factory/demo.md`.
+- Add `.factory/claims.json` with one `@claim:` test per public promise.
+- Correct the incomplete collector command list.
+- Replace metaphor copy and add `.factory/copy-audit.md`.
+- Add a real 404 response/page, full metadata, consistent legal-page footer and
+  navigation, Param Factory credit, and build identifier.
 
-## Required repair
+## What was verified
 
-- Reject unrecognized fields at every signed v1 object boundary, or include
-  every accepted field in the authenticated representation.
-- Add an expected-public-key or fingerprint option, fail on signer mismatch,
-  show the signer fingerprint, and document separate trust-reference delivery.
-- Add release-CLI regression checks for both behaviors.
-
-## Verification summary
+From a clean detached checkout of the implementation candidate:
 
 ```text
-npm ci                                      PASS — 24 packages, 0 vulnerabilities
+npm ci                                      PASS
 npm audit --audit-level=high                PASS — 0 vulnerabilities
-npm test                                    PASS — typecheck, fmt, Clippy,
-                                                   14 Rust + 14 Chromium tests
-npm run build                               PASS — target/release/kpe + dist/site
+npm test                                    PASS — 14 Rust + 14 Chromium tests
+npm run build                               PASS — release CLI + dist/site
 cargo test --doc                            PASS — 1
-cargo package --locked                      PASS — 25 files
+cargo package --locked --allow-dirty        PASS — 25 files
 clean packaged cargo install                PASS — kpe 0.1.0
-clean consumer public API                   PASS
-offline snapshot/report/sign/verify         PASS
-known signed-field modification rejection  PASS
-unrecognized-field rejection               FAIL — valid, exit 0
-trusted-signer enforcement                  FAIL — unavailable
-live build identity                         PASS — deployable artifacts match
-live desktop / 390 px / keyboard / axe      PASS
-service-worker update / offline reload      PASS
-privacy / request / response-policy checks  PASS
-Lighthouse mobile                           100 / 100 / 100 / 100
+offline report/sign/verify                  PASS for unchanged packet
+unknown signed fields                       FAIL — accepted at four levels
+trusted signer enforcement                  FAIL — unavailable
+unknown matrix field                        FAIL — changed a verdict silently
+CLI demo                                    FAIL — unavailable
 ```
 
-The installed CLI otherwise completed the documented workflow as 2 allowed / 2
-denied, returned exit 3 for both policy modes, safely handled exercised
-malformed/boundary inputs, and kept a sentinel kubeconfig token out of a
-controlled snapshot. No real Kubernetes cluster was available; the exact
-read-only collector command boundary and missing-`kubectl` recovery were
-exercised.
+The installed artifact also passed documented output, exit-code, invalid-input,
+missing-tool, unwritable-output, key-overwrite, and unsigned-packet recovery
+paths. A controlled kubectl process proved that collection stayed read-only.
+It also showed the two safe calls missing from README's exclusive list.
 
-## Deployment and known external state
+Fresh live desktop and 390 px phone contexts covered the root, privacy, terms,
+demo fallback, missing route, specimen states, keyboard, focus, reduced motion,
+license failure recovery, storage, requests, links, service-worker update, and
+offline reload. Playwright axe found no serious or critical issue. There were
+no console errors, undersized targets, horizontal overflow, or third-party
+first-load requests.
 
-The live root, privacy, terms, JS, CSS, source maps, image, service worker,
-example matrix, favicon, robots file, and sitemap match the candidate build
-byte-for-byte. The site has no serious or critical axe findings, console/page
-errors, third-party first-load requests, or budget overruns. Field Kit sales
-remain accurately paused because the factory-owned checkout is not enabled; no
-checkout link or claim that it is currently purchasable is exposed.
+Lighthouse mobile scored 100 for Performance, Accessibility, Best Practices,
+and SEO. FCP was 1.01 s, LCP 1.37 s, TBT 41 ms, CLS 0, and transfer about
+103 KiB. JavaScript, CSS, hero image, and font budgets pass.
 
-No product code was modified. Only this handoff and
-`.factory/verification-3.md` were added or updated.
+## Files changed by this review
+
+- `.factory/review-1.md`
+- `.factory/handoff.md`
+- `/work/.evidence/qa-report.md` and `qa-result.json`
+- `/work/.evidence/live/`, `verify-url/`, and `kubectl-harness/` supporting
+  evidence
+
+No product source, site source, tests, deployment, infrastructure, secrets, or
+other service was changed.
+
+## How to repeat
+
+```sh
+npm ci
+npm test
+npm run build
+cargo test --doc
+cargo package --locked --allow-dirty
+```
+
+Install the staged crate into an empty Cargo root, then run `kpe --help`, the
+README offline example, both `--fail-on` modes, signing, tamper checks, and
+two-key verification. Review `/demo` and a missing route in new desktop and
+phone browser contexts. Run the factory URL verifier, Playwright axe, and
+Lighthouse against the live URL.
+
+## Deployment and external state
+
+The current live artifacts match the implementation candidate. Field Kit sales
+remain honestly paused and no checkout is shown. No deployment is requested by
+this report-only work order.
