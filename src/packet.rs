@@ -6,15 +6,21 @@ use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
 use rand_core::OsRng;
 use sha2::{Digest, Sha256};
 use std::fs;
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::path::Path;
 
-pub fn generate_key(path: &Path) -> Result<()> {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SignerIdentity {
+    pub public_key: String,
+    pub fingerprint: String,
+}
+
+pub fn generate_key(path: &Path) -> Result<SignerIdentity> {
     let key = SigningKey::generate(&mut OsRng);
     let encoded = hex::encode(key.to_bytes());
     #[cfg(unix)]
     {
-        use std::fs::OpenOptions;
-        use std::io::Write;
         use std::os::unix::fs::OpenOptionsExt;
         let mut file = OpenOptions::new()
             .write(true)
@@ -31,7 +37,6 @@ pub fn generate_key(path: &Path) -> Result<()> {
     }
     #[cfg(not(unix))]
     {
-        use std::io::Write;
         let mut file = fs::OpenOptions::new()
             .write(true)
             .create_new(true)
@@ -44,6 +49,21 @@ pub fn generate_key(path: &Path) -> Result<()> {
             })?;
         writeln!(file, "{encoded}")?;
     }
+    Ok(identity_for_key(&key.verifying_key()))
+}
+
+pub fn write_public_key(path: &Path, public_key: &str) -> Result<()> {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .with_context(|| {
+            format!(
+                "could not create {} (refusing to overwrite)",
+                path.display()
+            )
+        })?;
+    writeln!(file, "{public_key}")?;
     Ok(())
 }
 
@@ -67,7 +87,14 @@ pub fn sign(report: &mut EvidenceReport, key_path: &Path) -> Result<()> {
     Ok(())
 }
 
-pub fn verify(report: &EvidenceReport) -> Result<()> {
+pub fn verify(report: &EvidenceReport) -> Result<SignerIdentity> {
+    if report.schema_version != "kpe.evidence/v1" {
+        bail!(
+            "unsupported evidence schema {:?}; expected kpe.evidence/v1",
+            report.schema_version
+        );
+    }
+    validate_report(report)?;
     let packet_signature = report.signature.as_ref().context("packet is not signed")?;
     if packet_signature.algorithm != "Ed25519" {
         bail!(
@@ -95,7 +122,80 @@ pub fn verify(report: &EvidenceReport) -> Result<()> {
     let public_key = VerifyingKey::from_bytes(&public_bytes).context("invalid public key")?;
     public_key
         .verify(&content, &Signature::from_bytes(&signature_bytes))
-        .context("signature verification failed")
+        .context("signature verification failed")?;
+    Ok(identity_for_key(&public_key))
+}
+
+pub fn require_public_key(identity: &SignerIdentity, path: &Path) -> Result<()> {
+    let expected = fs::read_to_string(path)
+        .with_context(|| format!("could not read trusted public key {}", path.display()))?;
+    if expected.trim() != identity.public_key {
+        bail!(
+            "signer does not match trusted public key {}; packet signer is {}",
+            path.display(),
+            identity.fingerprint
+        );
+    }
+    Ok(())
+}
+
+pub fn require_fingerprint(identity: &SignerIdentity, expected: &str) -> Result<()> {
+    let expected = expected
+        .trim()
+        .strip_prefix("SHA256:")
+        .or_else(|| expected.trim().strip_prefix("sha256:"))
+        .unwrap_or(expected.trim());
+    if expected.len() != 64 || !expected.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        bail!(
+            "trusted fingerprint must be 64 hexadecimal characters, optionally prefixed by SHA256:"
+        );
+    }
+    if !identity.fingerprint[7..].eq_ignore_ascii_case(expected) {
+        bail!(
+            "signer fingerprint mismatch; expected SHA256:{}, packet signer is {}",
+            expected.to_ascii_lowercase(),
+            identity.fingerprint
+        );
+    }
+    Ok(())
+}
+
+fn identity_for_key(key: &VerifyingKey) -> SignerIdentity {
+    SignerIdentity {
+        public_key: STANDARD.encode(key.to_bytes()),
+        fingerprint: format!("SHA256:{}", hex::encode(Sha256::digest(key.to_bytes()))),
+    }
+}
+
+fn validate_report(report: &EvidenceReport) -> Result<()> {
+    let allowed = report.checks.iter().filter(|check| check.allowed).count();
+    let uncertain = report.checks.iter().filter(|check| check.uncertain).count();
+    if report.summary.total != report.checks.len()
+        || report.summary.allowed != allowed
+        || report.summary.denied != report.checks.len() - allowed
+        || report.summary.uncertain != uncertain
+    {
+        bail!("evidence summary does not match its check results");
+    }
+    for (index, check) in report.checks.iter().enumerate() {
+        check
+            .request
+            .validate()
+            .map_err(|message| anyhow::anyhow!("evidence check {}: {message}", index + 1))?;
+        if check.allowed != !check.grants.is_empty() {
+            bail!(
+                "evidence check {} has an inconsistent allowed result",
+                index + 1
+            );
+        }
+        if check.uncertain != check.grants.iter().any(|grant| grant.uncertainty.is_some()) {
+            bail!(
+                "evidence check {} has an inconsistent uncertainty result",
+                index + 1
+            );
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -140,10 +240,11 @@ mod tests {
     fn signed_packet_verifies_and_tampering_fails() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("key");
-        generate_key(&path).unwrap();
+        let identity = generate_key(&path).unwrap();
+        assert!(identity.fingerprint.starts_with("SHA256:"));
         let mut packet = report();
         sign(&mut packet, &path).unwrap();
-        verify(&packet).unwrap();
+        assert_eq!(verify(&packet).unwrap(), identity);
         packet.subject.name = "mallory".into();
         assert!(verify(&packet).is_err());
     }

@@ -12,7 +12,7 @@ pub struct ObjectMeta {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PolicyRule {
     #[serde(default)]
     pub api_groups: Vec<String>,
@@ -40,7 +40,7 @@ pub struct Role {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RbacSubject {
     pub kind: String,
     pub name: String,
@@ -51,7 +51,7 @@ pub struct RbacSubject {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RoleRef {
     pub kind: String,
     pub name: String,
@@ -94,12 +94,13 @@ pub struct KubeList<T> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct AccessMatrix {
     pub checks: Vec<AccessCheck>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AccessCheck {
     pub verb: String,
     #[serde(default)]
@@ -162,7 +163,7 @@ impl AccessCheck {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SubjectIdentity {
     pub kind: String,
     pub name: String,
@@ -180,7 +181,7 @@ impl SubjectIdentity {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct EvidenceReport {
     pub schema_version: String,
     pub generated_at: String,
@@ -196,7 +197,7 @@ pub struct EvidenceReport {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct EvidenceSource {
     pub collected_at: String,
     pub context: String,
@@ -209,6 +210,7 @@ pub struct EvidenceSource {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct EvidenceSummary {
     pub total: usize,
     pub allowed: usize,
@@ -217,6 +219,7 @@ pub struct EvidenceSummary {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct CheckResult {
     pub request: AccessCheck,
     pub allowed: bool,
@@ -225,7 +228,7 @@ pub struct CheckResult {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct GrantProof {
     pub binding_kind: String,
     pub binding_name: String,
@@ -241,7 +244,7 @@ pub struct GrantProof {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PacketSignature {
     pub algorithm: String,
     pub public_key: String,

@@ -31,7 +31,9 @@ enum Command {
     Report(ReportArgs),
     /// Generate a new local Ed25519 signing key
     Keygen(KeygenArgs),
-    /// Verify an evidence JSON packet's embedded signature
+    /// Run the bundled sample without kubectl or a cluster
+    Demo(DemoArgs),
+    /// Verify a packet signature and, optionally, an approved signer
     Verify(VerifyArgs),
 }
 
@@ -98,6 +100,16 @@ struct KeygenArgs {
     /// New key path (existing files are never overwritten)
     #[arg(short, long)]
     output: PathBuf,
+    /// Write the matching Base64 public key for separate delivery to an auditor
+    #[arg(long)]
+    public_key_output: Option<PathBuf>,
+}
+
+#[derive(Args)]
+struct DemoArgs {
+    /// New directory for sample inputs and evidence (a temporary directory when omitted)
+    #[arg(long)]
+    output: Option<PathBuf>,
 }
 
 #[derive(Args)]
@@ -107,6 +119,12 @@ struct VerifyArgs {
     /// Emit a small machine-readable verification result
     #[arg(long)]
     json: bool,
+    /// Require the packet signer to match this Base64 public-key file
+    #[arg(long, conflicts_with = "trusted_fingerprint")]
+    trusted_public_key: Option<PathBuf>,
+    /// Require this SHA-256 public-key fingerprint
+    #[arg(long, conflicts_with = "trusted_public_key")]
+    trusted_fingerprint: Option<String>,
 }
 
 fn main() -> ExitCode {
@@ -124,13 +142,26 @@ fn run(cli: Cli) -> Result<u8> {
         Command::Snapshot(args) => snapshot_command(args),
         Command::Report(args) => report_command(args),
         Command::Keygen(args) => {
-            packet::generate_key(&args.output)?;
+            if args
+                .public_key_output
+                .as_ref()
+                .is_some_and(|path| path.exists())
+            {
+                bail!("refusing to overwrite public key output");
+            }
+            let identity = packet::generate_key(&args.output)?;
+            if let Some(path) = args.public_key_output {
+                packet::write_public_key(&path, &identity.public_key)?;
+                eprintln!("Created public key {}.", path.display());
+            }
             eprintln!(
-                "Created {}. Keep this signing key private.",
-                args.output.display()
+                "Created {}. Keep this signing key private.\nSigner fingerprint: {}",
+                args.output.display(),
+                identity.fingerprint
             );
             Ok(0)
         }
+        Command::Demo(args) => demo_command(args),
         Command::Verify(args) => verify_command(args),
     }
 }
@@ -210,18 +241,83 @@ fn report_command(args: ReportArgs) -> Result<u8> {
 
 fn verify_command(args: VerifyArgs) -> Result<u8> {
     let report: EvidenceReport = read_json(&args.packet, "evidence packet")?;
-    packet::verify(&report)?;
+    let signer = packet::verify(&report)?;
+    let trusted_signer = args.trusted_public_key.is_some() || args.trusted_fingerprint.is_some();
+    if let Some(path) = args.trusted_public_key {
+        packet::require_public_key(&signer, &path)?;
+    }
+    if let Some(fingerprint) = args.trusted_fingerprint {
+        packet::require_fingerprint(&signer, &fingerprint)?;
+    }
     if args.json {
         println!(
-            "{{\"valid\":true,\"subject\":{}}}",
-            serde_json::to_string(&report.subject.label())?
+            "{{\"valid\":true,\"trustedSigner\":{},\"subject\":{},\"signerFingerprint\":{}}}",
+            trusted_signer,
+            serde_json::to_string(&report.subject.label())?,
+            serde_json::to_string(&signer.fingerprint)?
+        );
+    } else if trusted_signer {
+        println!(
+            "VALID — signature, digest, and trusted signer match for {}. Signer: {}.",
+            report.subject.label(),
+            signer.fingerprint
         );
     } else {
         println!(
-            "VALID — Ed25519 signature and SHA-256 digest match for {}.",
-            report.subject.label()
+            "VALID CONTENT — signature and digest match for {}. Signer: {}. Trust was not checked; pass --trusted-public-key or --trusted-fingerprint.",
+            report.subject.label(),
+            signer.fingerprint
         );
     }
+    Ok(0)
+}
+
+fn demo_command(args: DemoArgs) -> Result<u8> {
+    let snapshot: Snapshot = serde_json::from_str(include_str!("../examples/rbac-snapshot.json"))
+        .context("bundled demo snapshot is invalid")?;
+    let matrix: AccessMatrix = serde_json::from_str(include_str!("../examples/matrix.json"))
+        .context("bundled demo matrix is invalid")?;
+    let subject = parse_subject("user:alice@example.com").map_err(anyhow::Error::msg)?;
+    let report = evaluate(&snapshot, &subject, &["platform-engineers".into()], &matrix);
+    let directory = args.output.unwrap_or_else(|| {
+        std::env::temp_dir().join(format!(
+            "kpe-demo-{}-{}",
+            std::process::id(),
+            chrono::Utc::now().timestamp_millis()
+        ))
+    });
+    fs::create_dir(&directory).with_context(|| {
+        format!(
+            "could not create demo directory {} (choose a path that does not exist)",
+            directory.display()
+        )
+    })?;
+    write_parented(
+        &directory.join("rbac-snapshot.json"),
+        include_bytes!("../examples/rbac-snapshot.json"),
+    )?;
+    write_parented(
+        &directory.join("matrix.json"),
+        include_bytes!("../examples/matrix.json"),
+    )?;
+    write_parented(
+        &directory.join("evidence.json"),
+        serde_json::to_string_pretty(&report)?.as_bytes(),
+    )?;
+    write_parented(
+        &directory.join("evidence.md"),
+        render::markdown(&report).as_bytes(),
+    )?;
+    println!("Demo — bundled sample data; no cluster was contacted.");
+    println!("Subject: {}", report.subject.label());
+    println!(
+        "Result: {} checks — {} allowed, {} denied, {} uncertain.",
+        report.summary.total,
+        report.summary.allowed,
+        report.summary.denied,
+        report.summary.uncertain
+    );
+    println!("Sample files: {}", directory.display());
     Ok(0)
 }
 
