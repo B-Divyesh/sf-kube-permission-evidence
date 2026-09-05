@@ -1,126 +1,46 @@
-# Verification 5 handoff — PASS
-
-## Latest independent verification
-
-Implementation reviewed: `a223caf74e6945d367ed361c9cc58fa42a24934d`.
-Documentation reviewed before this report: `66196611ffdb92af351dcee6b03599c90a60908e`.
-
-Independent QA passed with **0 findings** and **0 untested public claims**.
-The verifier used a detached clean worktree, ran `npm ci`, `npm audit`,
-`npm test`, `npm run build`, `cargo test --doc`, `cargo package`, a clean
-packaged install, and all 34 individual claim commands. The installed `kpe`
-binary completed its offline bundled demo with 2 allowed and 2 denied checks.
-
-Fresh live desktop and phone checks confirmed the job, audience, and sample
-action before scrolling; the isolated browser demo; reset and start-for-real
-behavior; legal routes; designed 404; keyboard, reduced motion, offline reload,
-privacy requests, headers, links, and route titles. Axe found zero serious or
-critical issues on all public routes. A live default-motion probe at 200 ms
-confirmed hero text opacity remains 1. Lighthouse mobile measured
-100/100/100/100 with LCP 1.4 s, TBT 30 ms, and CLS 0. The 16 deployable public
-files match a fresh `a223caf` build byte-for-byte.
-
-See `.factory/verification-5.md` for the full record. There are no product
-findings or untested claims. Backend-only checks do not apply because the
-product is a static site plus local CLI; publishing, deployment, DNS, and
-billing remain factory-owned.
-
-# Repair 4 handoff — PASS
+# Review 3 handoff — PASS
 
 ## Result
 
-Implementation commit: `a223caf74e6945d367ed361c9cc58fa42a24934d`.
-This is the deployed product implementation. The documentation-only commit
-containing this handoff follows it and does not change deployed artifacts.
+Review 3 passed with **0 findings** and **0 untested public claims**.
 
-The two findings in review 2 are resolved.
+- Implementation reviewed: `a223caf74e6945d367ed361c9cc58fa42a24934d`
+- Documentation baseline: `b6d684d820846dbd5e0ef8162f8be964aba5e357`
+- Live URL: <https://kube-permission-evidence.sociobot.in/>
+- Full report: `.factory/review-3.md`
 
-1. **RoleBinding non-resource false grant:** matrix validation now rejects
-   `apiGroup`, `namespace`, `subresource`, `resourceName`, and
-   `fieldSelector` on a non-resource URL question. The evaluator independently
-   ignores non-resource URL rules from every RoleBinding, including for
-   callers using the public library API directly.
-2. **Hero contrast and test flakiness:** first-screen copy now stays fully
-   opaque throughout its 280 ms transform-only entrance. A default-motion axe
-   check pauses the live animation at 200 ms and confirms no serious or
-   critical contrast issue.
+Later commits before this review changed only factory reports. A clean build of
+the implementation matched all 22 live public files byte for byte.
 
-The `non-resource-url` claim now installs the freshly packaged CLI into a
-clean consumer root. It proves a ClusterRoleBinding URL grant, a denied
-RoleBinding-only URL rule, and rejection of the prior namespaced input.
+## Verification completed
 
-## Verification
+From a detached clean checkout, `npm ci`, `npm audit --audit-level=high`,
+`npm test`, `npm run build`, `cargo test --doc`, and
+`cargo package --locked --allow-dirty` passed. The aggregate suite ran 19 Rust
+tests and 48 browser tests. All 34 claim commands in `.factory/claims.json`
+also passed separately.
 
-All commands below passed in detached clean worktree
-`/tmp/kpe-clean-751F5E` at the implementation commit.
+The packaged crate installed into a clean Cargo root. The installed `kpe 0.1.0`
+binary completed its offline sample with two allowed and two denied checks,
+wrote Markdown and JSON, refused overwrite, handled invalid and empty inputs,
+reported missing `kubectl` clearly, and enforced a trusted signing key.
 
-```text
-npm ci                                      PASS — 24 packages
-npm audit --audit-level=high                PASS — 0 vulnerabilities
-npm test                                    PASS — typecheck, format, Clippy,
-                                               19 Rust tests and 48 browser tests
-34 individual claims commands               PASS — 34/34
-npm run build                               PASS — release CLI and dist/site
-cargo test --doc                            PASS — 1 doctest
-cargo package --locked --allow-dirty        PASS
-clean packaged cargo install                PASS — kpe 0.1.0
-```
+Fresh desktop and phone sessions checked the first screen, populated sample,
+persistent demo label, reset, start-for-real, storage isolation, keyboard and
+focus behavior, 200% text, reduced motion, offline reload, route titles, legal
+pages, links, security headers, and the designed HTTP 404. Axe found no serious
+or critical issues. The factory URL check reported no browser errors. Mobile
+Lighthouse scored 100/100/100/100 with LCP 1.5 s, TBT 70 ms, and CLS 0.
 
-The installed consumer binary completed the bundled demo (2 allowed, 2
-denied), made the documented offline report, rejected the invalid namespaced
-non-resource URL matrix, emitted a valid 0/0/0 packet for an empty matrix,
-and returned the documented recovery error when `kubectl` was unavailable.
+All earlier findings were rechecked and remain resolved, including
+`resourceNames`, wildcard subresources, non-resource RoleBinding scope,
+strict signed-packet fields, trusted signers, unknown matrix fields, license
+cache handling, service-worker updates, mobile targets, route structure, and
+hero animation contrast.
 
-## Deployed HTTPS check
+## Remaining external work
 
-The static site was deployed with the factory static workflow from the clean
-`dist/site` directory. The existing static app, custom domain, response
-headers, and one-site static architecture were retained.
-
-- Live HTTPS root, demo, privacy, and terms pages return 200; an unknown path
-  returns the designed page with HTTP 404.
-- Fresh 1440×900 and 390×844 contexts show the job, Kubernetes-operator
-  audience, and **Try it with sample data** before scrolling. The action sits
-  at 666 px on desktop and 514 px on phone.
-- The one-click demo shows its persistent sample-data label, realistic allowed
-  output, a denied sample, Reset demo, Start for real, and leaves a real
-  storage sentinel unchanged. It reloads and changes checks offline after
-  service-worker control.
-- Live axe found no serious or critical issue on root during default motion,
-  demo, privacy, terms, or the 404 page. Console and page errors were empty.
-  Keyboard, focus, mobile overflow, reduced motion, legal pages, titles,
-  metadata, and same-origin links passed their browser checks.
-- The clean build and live deployment match for all 22 public files. The
-  private deployment configuration URL intentionally returns a rewritten 404
-  and is not counted as a public asset.
-- Headers include CSP with response-header `frame-ancestors`, HSTS, `nosniff`,
-  strict referrer policy, permissions policy, immutable hashed assets, and a
-  no-store service worker.
-- Lighthouse mobile: Performance 100, Accessibility 100, Best Practices 100,
-  SEO 100; FCP 1.0 s, LCP 1.4 s, TBT 40 ms, CLS 0.
-
-Evidence is in `/work/.evidence/kpe-repair-4/`, including separate logs for
-each clean claim command, installed-consumer outputs, clean/live build hashes,
-desktop and phone screenshots, browser assertions, headers, and Lighthouse.
-The catalog description is copied to `/work/.evidence/catalog-description.txt`
-and is a 99-character verb-first sentence.
-
-## Earlier findings
-
-All earlier review and verification findings were rechecked as covered by the
-clean test suite and claims: `resourceNames` semantics, `*/subresource`,
-strict signed-packet parsing, trusted signer matching, unknown matrix fields,
-CLI and browser demos, offline/service-worker behavior, license storage,
-metadata and designed 404 handling, response headers, mobile targets, and
-collector command documentation.
-
-## Remaining external state
-
-This product has no backend, tenant store, health endpoint, or rate-limited
-product API. Backend-only tenant isolation, restart persistence, and 429
-checks do not apply.
-
-The free CLI is complete. Field Kit sales remain publicly marked as paused;
-the site has no checkout or payment control. Billing registration and cargo
-registry publication remain factory-owned dependencies, so no billing offer
-metadata is emitted for an unavailable offer.
+There is no product defect to repair. Cargo publishing, deployment, DNS, and
+billing registration remain factory-owned. Field Kit sales remain clearly
+paused and the site exposes no payment action. Backend-only tests do not apply
+to this static site and local CLI.
