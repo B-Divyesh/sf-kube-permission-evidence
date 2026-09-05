@@ -129,3 +129,28 @@ Field Kit sales remain honestly paused, as before. No checkout or paid mock is
 shown. Publishing the ready Cargo package remains a factory release step; no
 registry credentials were used. There are no known product defects from this
 work order.
+
+## Verification 4 — PASS
+
+Independent verification on 2026-09-05 reviewed implementation
+`98eb121448edd957f8494df9577b7c47dcbc158b` and documentation
+`abe513f8391b92fc94f24d28b9891dab0257594d`. It found zero findings and zero
+untested claims.
+
+From a fresh detached checkout, `npm ci`, audit, `npm test`, `npm run build`,
+doctest, and `cargo package` passed. All 34 declared claim commands were run
+individually and passed. A packaged crate was installed into a clean consumer
+root; its demo, signed report, trusted-signer match/mismatch, invalid input,
+empty-matrix, and missing-kubectl paths passed.
+
+Fresh live desktop and 390 px contexts confirmed the job, audience, and
+sample-first action before scrolling; populated isolated demo; persistent demo
+label; reset; exit; real-storage protection; keyboard focus; reduced motion;
+offline demo; privacy; legal routes; links; and designed 404 response. Axe had
+zero serious or critical issues. Live Lighthouse was 100 in all four
+categories on retry. The live generated artifacts matched the implementation
+build byte-for-byte.
+
+See `.factory/verification-4.md` for the full evidence and prior-finding
+disposition. The remaining external step is Cargo registry publishing; sales
+remain paused.
